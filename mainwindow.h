@@ -2,7 +2,17 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QString>
+#include <QJsonArray>
+#include <QJsonObject>
+#include <QJsonDocument>
+#include <QDialog>
+#include <QMessageBox>
+#include <QDebug>
+#include <QCryptographicHash>
 #include "clientscoket.h"
+using namespace std;
+
 QT_BEGIN_NAMESPACE
 namespace Ui {
 class MainWindow;
@@ -30,7 +40,9 @@ private slots:
     void on_pushButtonFlush_clicked();      //刷新按钮
 
 private:
+    QJsonObject getInput();     //获取输入值
+private:
     Ui::MainWindow *ui;
-    clientScoket *m_tcpsocket;//客户端套接字类
+    QTcpSocket *m_tcpsocket;//客户端套接字类
 };
 #endif // MAINWINDOW_H
