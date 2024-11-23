@@ -30,6 +30,11 @@ MainWindow::MainWindow(QWidget *parent)
 
     //服务器消息处理
     connect(m_tcpsocket, &QTcpSocket::readyRead, this, &MainWindow::processMsg);
+
+    //QStandardItemModel 对象,用于管理要在QListViewUpload中展示的数据
+    imageModel = new QStandardItemModel(this);
+    //建立了 QListView和 QStandardItemModel之间的关联，使得ListView能够从imageModel中获取数据进行展示。
+    ui->listViewUpload->setModel(imageModel);
 }
 
 MainWindow::~MainWindow()
@@ -52,13 +57,18 @@ QJsonObject MainWindow::getInput()
 
 void MainWindow::on_pushButtonLogin_clicked()
 {
-    if(is_logined)
-    {
-        QMessageBox::information(this, "login", "你已登录");
-        return;
-    }
     //获取输入内容
     QJsonObject user = getInput();
+
+    //验证是否已登录,已登录直接返回
+    QString username = user["username"].toString();
+    if(userLoginStatus.find(username.toStdString()) != userLoginStatus.end() && userLoginStatus[username.toStdString()])
+    {
+        QMessageBox::information(this, "login", "该用户已登录");
+        return;
+    }
+
+    m_username = username;//先记录下当前要登录的用户名，用于后面登录成功时更改用户登录状态信息
 
     //查看账号或密码是否为空
     if(user["username"].toString().isEmpty() || user["password"].toString().isEmpty())
@@ -149,10 +159,53 @@ void MainWindow::on_pushButtonRegister_clicked()
 }
 
 void MainWindow::on_pushButtonSelectFile_clicked()
-{}
+{
+    //检查是否处于登录状态
+    if(userLoginStatus.empty())
+    {
+        QMessageBox::information(this,"提示", "未登录，请登录后再进行操作。");
+        return;
+    }
+
+    //选择一张或多张图片
+    QStringList fileNames = QFileDialog::getOpenFileNames(this, "选择图片", "C:\\Users\\administered\\Pictures\\Saved Pictures", "图片文件(*.png *.jpg *.jpeg)");
+
+    if (!fileNames.isEmpty())
+    {
+        for(const QString &fileName : fileNames)
+        {
+            //检查是否已存在同名图片,同名图片直接跳过，不做二次上传
+            if(!isImageExists(fileName))
+            {
+                // 将所选图片添加到列表
+                imageList.append(fileName);
+
+                // 创建一个标准项用于在ListView中显示图片名称
+                QStandardItem *item = new QStandardItem(fileName.split('/').last());//获取图片名
+
+                // 加载图片并显示缩略图
+                QImage image(fileName);//根据所选图片的文件名创建一个 QImage 对象，用于加载图片内容
+                QPixmap pixmap = QPixmap::fromImage(image);//将 QImage 对象转换为 QPixmap 对象
+                item->setData(pixmap.scaled(20, 20), Qt::DecorationRole);//设置图片的缩略图
+
+                //由于listViewUpload与imageModel关联,在imageModel上添加item时,会自动在listViewUpload上显示
+                imageModel->appendRow(item);
+            }
+        }
+    }
+}
 
 void MainWindow::on_pushButtonUpload_clicked()
-{}
+{
+    //检查是否处于登录状态
+    if(userLoginStatus.empty())
+    {
+        QMessageBox::information(this,"提示", "未登录，请登录后再进行操作。");
+        return;
+    }
+
+
+}
 
 void MainWindow::on_pushButtonFlush_clicked()
 {}
@@ -182,8 +235,6 @@ QJsonObject MainWindow::readMsg()
 
     //base64解码
     QByteArray decode_msg = QByteArray::fromBase64(msg);
-    qDebug() << "aaaa" << '\n';
-    qDebug() << decode_msg << '\n';
 
     //封装成json数据
     QJsonDocument doc = QJsonDocument::fromJson(decode_msg);
@@ -224,7 +275,8 @@ void MainWindow::processLogin(QJsonObject user)
     //显示登录结果
     if(msg == "登录成功")
     {
-        is_logined = true;//更改登录状态
+        userLoginStatus.clear();    //删除上个用户的登录状态
+        userLoginStatus[m_username.toStdString()] = true;  //更改登录状态
         QMessageBox::information(this, "login", msg);
     }
     else//用户不存在或密码错误
@@ -240,4 +292,18 @@ void MainWindow::processRegister(QJsonObject user)
     //显示注册结果
     QMessageBox::information(this, "register", msg);
 }
+
+bool MainWindow::isImageExists(const QString &fileName)
+{
+    QString baseName = QFileInfo(fileName).baseName();
+    for (const QString &existingFileName : imageList)
+    {
+        if (QFileInfo(existingFileName).baseName() == baseName)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 
