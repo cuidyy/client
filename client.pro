@@ -11,11 +11,13 @@ CONFIG += c++17
 SOURCES += \
     clientscoket.cpp \
     main.cpp \
-    mainwindow.cpp
+    mainwindow.cpp \
+    qaesencryption.cpp
 
 HEADERS += \
     clientscoket.h \
-    mainwindow.h
+    mainwindow.h \
+    qaesencryption.h
 
 FORMS += \
     mainwindow.ui

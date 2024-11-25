@@ -17,7 +17,10 @@
 #include <QFileDialog>
 #include <QStandardItemModel>
 #include <iostream>
+#include <fstream>
 #include <map>
+
+#include "qaesencryption.h"
 using namespace std;
 
 QT_BEGIN_NAMESPACE

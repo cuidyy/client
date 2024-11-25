@@ -204,6 +204,61 @@ void MainWindow::on_pushButtonUpload_clicked()
         return;
     }
 
+    if(imageList.isEmpty())
+    {
+        QMessageBox::information(this, "提示", "上传列表为空");
+        return;
+    }
+    for(const QString &fileName : imageList)
+    {
+        QFile file(fileName);
+        // 遍历图片列表，逐个上传
+        if (file.open(QIODevice::ReadOnly))
+        {
+            QByteArray imageData = file.readAll();
+
+            // 使用AES128加密
+            QByteArray key ("1234567812345678");
+            QAESEncryption aesEnctyption(QAESEncryption::AES_128, QAESEncryption::CBC);
+            QByteArray encryptedData = aesEnctyption.encode(imageData, key, key);
+            // 使用Base64编码
+            QByteArray encodedData = encryptedData.toBase64();
+
+            // 创建JsonObject并添加加密后的数据
+            QJsonObject user;
+            QJsonObject msg;
+            user["username"] = m_username;
+            user["imagedata"] = QString(encodedData);
+            QFileInfo fileInfo(fileName);
+            user["imagename"] = fileInfo.fileName();
+
+            msg.insert("user", user);
+            msg.insert("request", "upload");
+
+            // 将JsonObject转换为字节数组
+            QByteArray byteArray = QJsonDocument(msg).toJson();
+
+            //转换为base64编码
+            QByteArray msg_base64 = byteArray.toBase64().constData();
+
+            //获取要发送数据大小
+            uint32_t size = msg_base64.size();
+            qDebug() << size;
+            //转换为网络字节序
+            size = htonl(size);
+            //将size作为包头添加到发送数据前面
+            msg_base64.prepend(reinterpret_cast<const char*>(&size), sizeof(size));
+
+            // 通过TCP发送数据
+            m_tcpsocket->write(msg_base64);
+
+            file.close();
+        }
+    }
+    //清空上传列表
+    imageModel->removeRows(0,imageModel->rowCount());
+    //清空图片列表
+    imageList.clear();
 
 }
 
