@@ -31,10 +31,26 @@ MainWindow::MainWindow(QWidget *parent)
     //服务器消息处理
     connect(m_tcpsocket, &QTcpSocket::readyRead, this, &MainWindow::processMsg);
 
-    //QStandardItemModel 对象,用于管理要在QListViewUpload中展示的数据
+    //QStandardItemModel 对象,用于管理要在ListViewUpload中展示的数据
     imageModel = new QStandardItemModel(this);
     //建立了 QListView和 QStandardItemModel之间的关联，使得ListView能够从imageModel中获取数据进行展示。
     ui->listViewUpload->setModel(imageModel);
+
+    //QStandardItemModel 对象,用于管理要在ListViewCloud中展示的数据
+    cloudModel = new QStandardItemModel(this);
+    ui->listViewCloud->setModel(cloudModel);
+
+    //当双击云端列表的项时下载图片
+    connect(ui->listViewCloud, SIGNAL(doubleClicked(const QModelIndex &)), this, SLOT(on_ListViewCloudDoubleClicked(const QModelIndex &)));
+
+
+    graphicsScene = new QGraphicsScene(this);
+    graphicsView = new QGraphicsView(graphicsScene, this);
+    //设置视图的几何尺寸
+    graphicsView->setGeometry(100, 100, 500, 500);
+    // 将视图设置为一个独立的窗口形式
+    graphicsView->setWindowFlags(Qt::Window);
+
 }
 
 MainWindow::~MainWindow()
@@ -42,6 +58,7 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+//获取用户名密码
 QJsonObject MainWindow::getInput()
 {
     QString username = ui->lineEditUserName->text();
@@ -55,6 +72,7 @@ QJsonObject MainWindow::getInput()
     return user;
 }
 
+//登录按钮
 void MainWindow::on_pushButtonLogin_clicked()
 {
     //获取输入内容
@@ -67,9 +85,7 @@ void MainWindow::on_pushButtonLogin_clicked()
         QMessageBox::information(this, "login", "该用户已登录");
         return;
     }
-
-    m_username = username;//先记录下当前要登录的用户名，用于后面登录成功时更改用户登录状态信息
-
+    m_username = username;//先记录下当前要登录的用户名，用于后面登录成功时更改用户登录状态信息  
     //查看账号或密码是否为空
     if(user["username"].toString().isEmpty() || user["password"].toString().isEmpty())
     {
@@ -112,6 +128,7 @@ void MainWindow::on_pushButtonLogin_clicked()
 
 }
 
+//注册按钮
 void MainWindow::on_pushButtonRegister_clicked()
 {
     //获取输入内容
@@ -158,6 +175,7 @@ void MainWindow::on_pushButtonRegister_clicked()
     m_tcpsocket->write(msg_base64);
 }
 
+//选择文件按钮
 void MainWindow::on_pushButtonSelectFile_clicked()
 {
     //检查是否处于登录状态
@@ -195,6 +213,7 @@ void MainWindow::on_pushButtonSelectFile_clicked()
     }
 }
 
+//上传按钮
 void MainWindow::on_pushButtonUpload_clicked()
 {
     //检查是否处于登录状态
@@ -262,9 +281,72 @@ void MainWindow::on_pushButtonUpload_clicked()
 
 }
 
+//刷新按钮
 void MainWindow::on_pushButtonFlush_clicked()
-{}
+{
+    //检查是否处于登录状态
+    if(userLoginStatus.empty())
+    {
+        QMessageBox::information(this,"提示", "未登录，请登录后再进行操作。");
+        return;
+    }
+    //清空云端列表
+    cloudModel->removeRows(0,cloudModel->rowCount());
 
+    QJsonObject user;
+    QJsonObject msg;
+    user["username"] = m_username;
+    msg.insert("user", user);
+    msg.insert("request", "getlist");
+
+    // 将JsonObject转换为字节数组
+    QByteArray byteArray = QJsonDocument(msg).toJson();
+
+    //转换为base64编码
+    QByteArray msg_base64 = byteArray.toBase64().constData();
+
+    //获取要发送数据大小
+    uint32_t size = msg_base64.size();
+    qDebug() << size;
+    //转换为网络字节序
+    size = htonl(size);
+    //将size作为包头添加到发送数据前面
+    msg_base64.prepend(reinterpret_cast<const char*>(&size), sizeof(size));
+
+    // 通过TCP发送数据
+    m_tcpsocket->write(msg_base64);
+}
+
+//双击图片名并下载图片
+void MainWindow::on_ListViewCloudDoubleClicked(const QModelIndex &index)
+{
+    //获取图片名
+    QString imagename = cloudModel->data(index, Qt::DisplayRole).toString();
+
+    QJsonObject user;
+    QJsonObject msg;
+    user["username"] = m_username;
+    user["imagename"] = imagename;
+    msg.insert("user", user);
+    msg.insert("request", "download");
+
+    // 将JsonObject转换为字节数组
+    QByteArray byteArray = QJsonDocument(msg).toJson();
+
+    //转换为base64编码
+    QByteArray msg_base64 = byteArray.toBase64().constData();
+
+    //获取要发送数据大小
+    uint32_t size = msg_base64.size();
+    qDebug() << size;
+    //转换为网络字节序
+    size = htonl(size);
+    //将size作为包头添加到发送数据前面
+    msg_base64.prepend(reinterpret_cast<const char*>(&size), sizeof(size));
+
+    // 通过TCP发送数据
+    m_tcpsocket->write(msg_base64);
+}
 //读取数据
 QJsonObject MainWindow::readMsg()
 {
@@ -319,8 +401,18 @@ void MainWindow::processMsg()
     {
         processRegister(user);
     }
-
-
+    if(request == "upload")
+    {
+        processUpload(user);
+    }
+    if(request == "getlist")
+    {
+        processGetlist(user);
+    }
+    if(request == "download")
+    {
+        processDownload(user);
+    }
 }
 
 //登录处理
@@ -331,7 +423,8 @@ void MainWindow::processLogin(QJsonObject user)
     if(msg == "登录成功")
     {
         userLoginStatus.clear();    //删除上个用户的登录状态
-        userLoginStatus[m_username.toStdString()] = true;  //更改登录状态
+        userLoginStatus[m_username.toStdString()] = true;   //更改登录状态
+        cloudModel->removeRows(0,cloudModel->rowCount());   //清空云端列表
         QMessageBox::information(this, "login", msg);
     }
     else//用户不存在或密码错误
@@ -348,6 +441,61 @@ void MainWindow::processRegister(QJsonObject user)
     QMessageBox::information(this, "register", msg);
 }
 
+//处理上传
+void MainWindow::processUpload(QJsonObject user)
+{
+    QString msg = user["msg"].toString();
+    //显示上传结果
+    QMessageBox::information(this, "uoload", msg);
+}
+
+//处理获得列表
+void MainWindow::processGetlist(QJsonObject user)
+{
+    QJsonArray list = user["list"].toArray();
+    for(int i = 0; i < list.size(); i++)
+    {
+        // 创建一个标准项用于在ListView中显示图片名称
+        QStandardItem *item = new QStandardItem(list[i].toString());//获取图片名
+        cloudModel->appendRow(item);
+    }
+}
+
+//处理图片下载
+void MainWindow::processDownload(QJsonObject user)
+{
+    QString msg = user["msg"].toString();
+    //下载成功显示图片
+    if(msg == "下载成功")
+    {
+        QString imagename = user["imagename"].toString();
+        //base64解码
+        QByteArray decode_data = QByteArray::fromBase64(user["imagedata"].toString().toUtf8());
+
+        // AES128解密
+        QByteArray key ("1234567812345678");
+        QAESEncryption aesEnctyption(QAESEncryption::AES_128, QAESEncryption::CBC);
+        QByteArray imagedata = aesEnctyption.decode(decode_data, key, key);
+
+        //显示图片
+        QImage image;
+        if (image.loadFromData(imagedata)) {
+            // 在图形场景中显示图片
+            graphicsScene->clear(); //清空当前 QGraphicsScene 中的所有已有图形元素
+            graphicsScene->addPixmap(QPixmap::fromImage(image));    //添加图像到场景
+            graphicsView->setSceneRect(image.rect());   //设置视图场景矩形 确保了视图能够准确地展示出整个图像内容
+
+            graphicsView->setWindowTitle(imagename);//设置窗口标题
+            graphicsView->show();
+        } else {
+            qDebug() << "无法加载图片数据";
+        }
+    }
+    else //下载失败显示下载结果
+    {
+        QMessageBox::information(this, "download", msg);
+    }
+}
 bool MainWindow::isImageExists(const QString &fileName)
 {
     QString baseName = QFileInfo(fileName).baseName();

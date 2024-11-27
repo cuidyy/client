@@ -69,6 +69,8 @@ public:
         listViewCloud = new QListView(centralwidget);
         listViewCloud->setObjectName("listViewCloud");
         listViewCloud->setGeometry(QRect(270, 150, 211, 211));
+        listViewCloud->setContextMenuPolicy(Qt::NoContextMenu);
+        listViewCloud->setEditTriggers(QAbstractItemView::NoEditTriggers);
         pushButtonUpload = new QPushButton(centralwidget);
         pushButtonUpload->setObjectName("pushButtonUpload");
         pushButtonUpload->setGeometry(QRect(150, 380, 75, 23));
