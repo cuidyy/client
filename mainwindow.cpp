@@ -25,7 +25,7 @@ MainWindow::MainWindow(QWidget *parent)
     if(!m_tcpsocket->waitForConnected(1000))
     {
         QMessageBox::information(this, "", "连接服务器超时");
-        //exit(1);
+        exit(1);
     }
 
     //服务器消息处理
