@@ -45,7 +45,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 
     graphicsScene = new QGraphicsScene(this);
-    graphicsView = new QGraphicsView(graphicsScene, this);
+    graphicsView = new QGraphicsView(graphicsScene);
     //设置视图的几何尺寸
     graphicsView->setGeometry(100, 100, 500, 500);
     // 将视图设置为一个独立的窗口形式

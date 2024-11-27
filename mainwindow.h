@@ -70,6 +70,7 @@ private:
     void processDownload(QJsonObject user); //处理图片下载消息
 
     bool isImageExists(const QString &fileName); //判断图片是否已在图片列表
+
 private:
     Ui::MainWindow *ui;
     QTcpSocket *m_tcpsocket;//客户端套接字类
