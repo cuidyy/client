@@ -43,6 +43,10 @@ MainWindow::MainWindow(QWidget *parent)
     //当双击云端列表的项时下载图片
     connect(ui->listViewCloud, SIGNAL(doubleClicked(const QModelIndex &)), this, SLOT(on_ListViewCloudDoubleClicked(const QModelIndex &)));
 
+    //设置 QListView的上下文菜单策略为自定义上下文菜单模式,当设置为这种模式时，部件会在右键点击时触发 customContextMenuRequested 信号
+    ui->listViewCloud->setContextMenuPolicy(Qt::CustomContextMenu);
+    //右键云端列表的项时删除图片
+    connect(ui->listViewCloud, SIGNAL(customContextMenuRequested(const QPoint &)), this, SLOT(on_ListViewCloudRightClicked(const QPoint &)));
 
     graphicsScene = new QGraphicsScene(this);
     graphicsView = new QGraphicsView(graphicsScene);
@@ -347,6 +351,39 @@ void MainWindow::on_ListViewCloudDoubleClicked(const QModelIndex &index)
     // 通过TCP发送数据
     m_tcpsocket->write(msg_base64);
 }
+
+//右键图片名删除图片
+void MainWindow::on_ListViewCloudRightClicked(const QPoint &index)
+{
+    QModelIndex m_index = ui->listViewCloud->indexAt(index);
+    //获取图片名
+    QString imagename = cloudModel->data(m_index, Qt::DisplayRole).toString();
+    QJsonObject user;
+    QJsonObject msg;
+    user["username"] = m_username;
+    user["imagename"] = imagename;
+    msg.insert("user", user);
+    msg.insert("request", "delete");
+
+    // 将JsonObject转换为字节数组
+    QByteArray byteArray = QJsonDocument(msg).toJson();
+
+    //转换为base64编码
+    QByteArray msg_base64 = byteArray.toBase64().constData();
+
+    //获取要发送数据大小
+    uint32_t size = msg_base64.size();
+    qDebug() << size;
+    //转换为网络字节序
+    size = htonl(size);
+    //将size作为包头添加到发送数据前面
+    msg_base64.prepend(reinterpret_cast<const char*>(&size), sizeof(size));
+
+    // 通过TCP发送数据
+    m_tcpsocket->write(msg_base64);
+}
+
+
 //读取数据
 QJsonObject MainWindow::readMsg()
 {
@@ -412,6 +449,10 @@ void MainWindow::processMsg()
     if(request == "download")
     {
         processDownload(user);
+    }
+    if(request == "delete")
+    {
+        processDelete(user);
     }
 }
 
@@ -494,6 +535,30 @@ void MainWindow::processDownload(QJsonObject user)
     else //下载失败显示下载结果
     {
         QMessageBox::information(this, "download", msg);
+    }
+}
+
+//图片删除处理
+void MainWindow::processDelete(QJsonObject user)
+{
+    QString msg = user["msg"].toString();
+    //删除成功返回新的图片列表
+    if(msg == "删除成功")
+    {
+        //清空云端列表
+        cloudModel->removeRows(0,cloudModel->rowCount());
+
+        QJsonArray list = user["list"].toArray();
+        for(int i = 0; i < list.size(); i++)
+        {
+            // 创建一个标准项用于在ListView中显示图片名称
+            QStandardItem *item = new QStandardItem(list[i].toString());//获取图片名
+            cloudModel->appendRow(item);
+        }
+    }
+    else //删除失败
+    {
+        QMessageBox::information(this, "delete", msg);
     }
 }
 bool MainWindow::isImageExists(const QString &fileName)

@@ -53,6 +53,8 @@ private slots:
 
     void on_ListViewCloudDoubleClicked(const QModelIndex &index);//双击下载图片
 
+    void on_ListViewCloudRightClicked(const QPoint &index);
+
     void processMsg();                      //处理消息
 private:
     QJsonObject getInput();     //获取输入值
@@ -68,6 +70,8 @@ private:
     void processGetlist(QJsonObject user);  //处理获得图片列表消息
 
     void processDownload(QJsonObject user); //处理图片下载消息
+
+    void processDelete(QJsonObject user);   //处理图片删除消息
 
     bool isImageExists(const QString &fileName); //判断图片是否已在图片列表
 
