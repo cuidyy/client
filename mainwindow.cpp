@@ -104,17 +104,24 @@ void MainWindow::on_pushButtonLogin_clicked()
     QByteArray pwd_md5 = hash.result().toHex();
 
     user["password"] = QString(pwd_md5);
-    //构建消息
+    //构建请求体
     QJsonObject msg;
     msg.insert("user", user);
-    msg.insert("request", "login");
-    qDebug() << msg;
 
-    //connect(m_tcpsocket, &QTcpSocket::readyRead, this, &MainWindow::processMsg);
     //构建 QJsonDocument对象
     QJsonDocument doc(msg);
     //将QJsonDocument对象转换为QByteArray
-    QByteArray byteArray = doc.toJson();
+    QByteArray requestBody = doc.toJson();
+
+    // 构建HTTP请求报文
+    QString request = "POST /login HTTP/1.1\r\n"
+                      "Host: 192.168.234.128:8080\r\n\r\n";
+
+    //添加请求体
+    request += requestBody;
+
+    //将请求报文字符串转换为QByteArray
+    QByteArray byteArray = request.toUtf8();
 
     //转换为base64编码
     QByteArray msg_base64 = byteArray.toBase64().constData();
@@ -151,25 +158,31 @@ void MainWindow::on_pushButtonRegister_clicked()
     QByteArray pwd_md5 = hash.result().toHex();
 
     user["password"] = QString(pwd_md5);
-    //构建消息
+    //构建请求体
     QJsonObject msg;
     msg.insert("user", user);
-    msg.insert("request", "register");
-    qDebug() << msg;
 
-    //connect(m_tcpsocket, &QTcpSocket::readyRead, this, &MainWindow::processMsg);
     //构建 QJsonDocument对象
     QJsonDocument doc(msg);
     //将QJsonDocument对象转换为QByteArray
-    QByteArray byteArray = doc.toJson();
+    QByteArray requestBody = doc.toJson();
 
-    //base64编码
+    // 构建HTTP请求报文
+    QString request = "POST /register HTTP/1.1\r\n"
+                      "Host: 192.168.234.128:8080\r\n\r\n";
+
+    //添加请求体
+    request += requestBody;
+
+    //将请求报文字符串转换为QByteArray
+    QByteArray byteArray = request.toUtf8();
+
+    //转换为base64编码
     QByteArray msg_base64 = byteArray.toBase64().constData();
 
     //获取要发送数据大小
     uint32_t size = msg_base64.size();
     //转换为网络字节序
-    qDebug() << size << '\n';
     size = htonl(size);
 
     //将size作为包头添加到发送数据前面
@@ -249,30 +262,42 @@ void MainWindow::on_pushButtonUpload_clicked()
 
             // 创建JsonObject并添加加密后的数据
             QJsonObject user;
-            QJsonObject msg;
             user["username"] = m_username;
             user["imagedata"] = QString(encodedData);
             QFileInfo fileInfo(fileName);
             user["imagename"] = fileInfo.fileName();
 
+            //构建请求体
+            QJsonObject msg;
             msg.insert("user", user);
-            msg.insert("request", "upload");
 
-            // 将JsonObject转换为字节数组
-            QByteArray byteArray = QJsonDocument(msg).toJson();
+            //构建 QJsonDocument对象
+            QJsonDocument doc(msg);
+            //将QJsonDocument对象转换为QByteArray
+            QByteArray requestBody = doc.toJson();
+
+            // 构建HTTP请求报文
+            QString request = "POST /upload HTTP/1.1\r\n"
+                              "Host: 192.168.234.128:8080\r\n\r\n";
+
+            //添加请求体
+            request += requestBody;
+
+            //将请求报文字符串转换为QByteArray
+            QByteArray byteArray = request.toUtf8();
 
             //转换为base64编码
             QByteArray msg_base64 = byteArray.toBase64().constData();
 
             //获取要发送数据大小
             uint32_t size = msg_base64.size();
-            qDebug() << size;
             //转换为网络字节序
             size = htonl(size);
+
             //将size作为包头添加到发送数据前面
             msg_base64.prepend(reinterpret_cast<const char*>(&size), sizeof(size));
 
-            // 通过TCP发送数据
+            //发送消息
             m_tcpsocket->write(msg_base64);
 
             file.close();
