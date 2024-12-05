@@ -28,9 +28,6 @@ MainWindow::MainWindow(QWidget *parent)
         exit(1);
     }
 
-    //服务器消息处理
-    connect(m_tcpsocket, &QTcpSocket::readyRead, this, &MainWindow::processMsg);
-
     //QStandardItemModel 对象,用于管理要在ListViewUpload中展示的数据
     imageModel = new QStandardItemModel(this);
     //建立了 QListView和 QStandardItemModel之间的关联，使得ListView能够从imageModel中获取数据进行展示。
@@ -134,6 +131,9 @@ void MainWindow::on_pushButtonLogin_clicked()
     //将size作为包头添加到发送数据前面
     msg_base64.prepend(reinterpret_cast<const char*>(&size), sizeof(size));
 
+    //服务器消息处理
+    connect(m_tcpsocket, &QTcpSocket::readyRead, this, &MainWindow::processLogin);
+
     //发送消息
     m_tcpsocket->write(msg_base64);
 
@@ -188,6 +188,9 @@ void MainWindow::on_pushButtonRegister_clicked()
     //将size作为包头添加到发送数据前面
     msg_base64.prepend(reinterpret_cast<const char*>(&size), sizeof(size));
 
+    //服务器消息处理
+    connect(m_tcpsocket, &QTcpSocket::readyRead, this, &MainWindow::processRegister);
+
     //发送消息
     m_tcpsocket->write(msg_base64);
 }
@@ -212,7 +215,7 @@ void MainWindow::on_pushButtonSelectFile_clicked()
             //检查是否已存在同名图片,同名图片直接跳过，不做二次上传
             if(!isImageExists(fileName))
             {
-                // 将所选图片添加到列表
+                // 将所 选图片添加到列表
                 imageList.append(fileName);
 
                 // 创建一个标准项用于在ListView中显示图片名称
@@ -245,12 +248,18 @@ void MainWindow::on_pushButtonUpload_clicked()
         QMessageBox::information(this, "提示", "上传列表为空");
         return;
     }
+
+
+    //服务器消息处理
+    connect(m_tcpsocket, &QTcpSocket::readyRead, this, &MainWindow::processUpload);
+
     for(const QString &fileName : imageList)
     {
         QFile file(fileName);
         // 遍历图片列表，逐个上传
         if (file.open(QIODevice::ReadOnly))
         {
+
             QByteArray imageData = file.readAll();
 
             // 使用AES128加密
@@ -299,7 +308,6 @@ void MainWindow::on_pushButtonUpload_clicked()
 
             //发送消息
             m_tcpsocket->write(msg_base64);
-
             file.close();
         }
     }
@@ -322,25 +330,26 @@ void MainWindow::on_pushButtonFlush_clicked()
     //清空云端列表
     cloudModel->removeRows(0,cloudModel->rowCount());
 
-    QJsonObject user;
-    QJsonObject msg;
-    user["username"] = m_username;
-    msg.insert("user", user);
-    msg.insert("request", "getlist");
+    // 构建HTTP GET请求报文
+    QString request = "GET /getlist?username=" + m_username + " HTTP/1.1\r\n"
+                      "Host: 192.168.234.128:8080\r\n\r\n";
 
-    // 将JsonObject转换为字节数组
-    QByteArray byteArray = QJsonDocument(msg).toJson();
+    //将请求报文字符串转换为QByteArray
+    QByteArray byteArray = request.toUtf8();
 
     //转换为base64编码
     QByteArray msg_base64 = byteArray.toBase64().constData();
 
     //获取要发送数据大小
     uint32_t size = msg_base64.size();
-    qDebug() << size;
     //转换为网络字节序
     size = htonl(size);
+
     //将size作为包头添加到发送数据前面
     msg_base64.prepend(reinterpret_cast<const char*>(&size), sizeof(size));
+
+    //服务器消息处理
+    connect(m_tcpsocket, &QTcpSocket::readyRead, this, &MainWindow::processGetlist);
 
     // 通过TCP发送数据
     m_tcpsocket->write(msg_base64);
@@ -352,26 +361,26 @@ void MainWindow::on_ListViewCloudDoubleClicked(const QModelIndex &index)
     //获取图片名
     QString imagename = cloudModel->data(index, Qt::DisplayRole).toString();
 
-    QJsonObject user;
-    QJsonObject msg;
-    user["username"] = m_username;
-    user["imagename"] = imagename;
-    msg.insert("user", user);
-    msg.insert("request", "download");
+    // 构建HTTP GET请求报文
+    QString request = "GET /download?username=" + m_username + "&imagename=" + imagename + " HTTP/1.1\r\n"
+                        "Host: 192.168.234.128:8080\r\n\r\n";
 
-    // 将JsonObject转换为字节数组
-    QByteArray byteArray = QJsonDocument(msg).toJson();
+    //将请求报文字符串转换为QByteArray
+    QByteArray byteArray = request.toUtf8();
 
     //转换为base64编码
     QByteArray msg_base64 = byteArray.toBase64().constData();
 
     //获取要发送数据大小
     uint32_t size = msg_base64.size();
-    qDebug() << size;
     //转换为网络字节序
     size = htonl(size);
+
     //将size作为包头添加到发送数据前面
     msg_base64.prepend(reinterpret_cast<const char*>(&size), sizeof(size));
+
+    //服务器消息处理
+    connect(m_tcpsocket, &QTcpSocket::readyRead, this, &MainWindow::processDownload);
 
     // 通过TCP发送数据
     m_tcpsocket->write(msg_base64);
@@ -383,26 +392,27 @@ void MainWindow::on_ListViewCloudRightClicked(const QPoint &index)
     QModelIndex m_index = ui->listViewCloud->indexAt(index);
     //获取图片名
     QString imagename = cloudModel->data(m_index, Qt::DisplayRole).toString();
-    QJsonObject user;
-    QJsonObject msg;
-    user["username"] = m_username;
-    user["imagename"] = imagename;
-    msg.insert("user", user);
-    msg.insert("request", "delete");
 
-    // 将JsonObject转换为字节数组
-    QByteArray byteArray = QJsonDocument(msg).toJson();
+    // 构建HTTP GET请求报文
+    QString request = "DELETE /delete?username=" + m_username + "&imagename=" + imagename + " HTTP/1.1\r\n"
+                                                                                           "Host: 192.168.234.128:8080\r\n\r\n";
+
+    //将请求报文字符串转换为QByteArray
+    QByteArray byteArray = request.toUtf8();
 
     //转换为base64编码
     QByteArray msg_base64 = byteArray.toBase64().constData();
 
     //获取要发送数据大小
     uint32_t size = msg_base64.size();
-    qDebug() << size;
     //转换为网络字节序
     size = htonl(size);
+
     //将size作为包头添加到发送数据前面
     msg_base64.prepend(reinterpret_cast<const char*>(&size), sizeof(size));
+
+    //服务器消息处理
+    connect(m_tcpsocket, &QTcpSocket::readyRead, this, &MainWindow::processDelete);
 
     // 通过TCP发送数据
     m_tcpsocket->write(msg_base64);
@@ -410,14 +420,13 @@ void MainWindow::on_ListViewCloudRightClicked(const QPoint &index)
 
 
 //读取数据
-QJsonObject MainWindow::readMsg()
+QByteArray MainWindow::readMsg()
 {
     //读取数据包头
     while(m_tcpsocket->bytesAvailable() < 4)//数据包头不完整
     {
         QCoreApplication::processEvents();
     }
-
     QByteArray head = m_tcpsocket->read(4);
 
     uint32_t msglen;//数据长度
@@ -431,108 +440,248 @@ QJsonObject MainWindow::readMsg()
         QCoreApplication::processEvents();
     }
     msg += m_tcpsocket->readAll();
-
     //base64解码
     QByteArray decode_msg = QByteArray::fromBase64(msg);
 
-    //封装成json数据
-    QJsonDocument doc = QJsonDocument::fromJson(decode_msg);
-    QJsonObject json_msg = doc.object();
-    qDebug() << json_msg << '\n';
-
-    return json_msg;
+    return decode_msg;
 }
 
 //消息处理
-void MainWindow::processMsg()
-{
-    QJsonObject root = readMsg();
-    if(root.isEmpty())
-    {
-        QMessageBox::information(this, "", "数据解析为空");
-    }
+// void MainWindow::processMsg()
+// {
+//     QJsonObject root = readMsg();
+//     if(root.isEmpty())
+//     {
+//         QMessageBox::information(this, "", "数据解析为空");
+//     }
 
-    //根据请求字段的值进行相应处理
-    QString request = root["request"].toString();
-    QJsonObject user = root;
-    if(request == "login")
-    {
-        processLogin(user);
-    }
-    if(request == "register")
-    {
-        processRegister(user);
-    }
-    if(request == "upload")
-    {
-        processUpload(user);
-    }
-    if(request == "getlist")
-    {
-        processGetlist(user);
-    }
-    if(request == "download")
-    {
-        processDownload(user);
-    }
-    if(request == "delete")
-    {
-        processDelete(user);
-    }
-}
+//     //根据请求字段的值进行相应处理
+//     QString request = root["request"].toString();
+//     QJsonObject user = root;
+//     if(request == "login")
+//     {
+//         processLogin(user);
+//     }
+//     if(request == "register")
+//     {
+//         processRegister(user);
+//     }
+//     if(request == "upload")
+//     {
+//         processUpload(user);
+//     }
+//     if(request == "getlist")
+//     {
+//         processGetlist(user);
+//     }
+//     if(request == "download")
+//     {
+//         processDownload(user);
+//     }
+//     if(request == "delete")
+//     {
+//         processDelete(user);
+//     }
+// }
 
 //登录处理
-void MainWindow::processLogin(QJsonObject user)
+void MainWindow::processLogin()
 {
+    //获取http响应消息
+    QByteArray response = readMsg();
+
+    //断开信号和槽
+    disconnect(m_tcpsocket, &QTcpSocket::readyRead, this, &MainWindow::processLogin);
+
+    int headerEndIndex = response.indexOf("\r\n\r\n");
+    //获取状态行
+    QByteArray statusLine = response.left(headerEndIndex);
+
+    //获取响应体
+    QByteArray jsonBody = response.mid(headerEndIndex + 4);
+
+    //将状态行的各个部分存储到列表中
+    QStringList parts = QString::fromUtf8(statusLine).split(" ");
+
+    //提取状态码
+    QString statusCode = parts.at(1);
+
+    //将响应体转换为json对象
+    QJsonDocument doc = QJsonDocument::fromJson(jsonBody);
+    QJsonObject user = doc.object();
+    //具体消息
     QString msg = user["msg"].toString();
+
     //显示登录结果
-    if(msg == "登录成功")
+    if(statusCode == "200")
     {
         userLoginStatus.clear();    //删除上个用户的登录状态
         userLoginStatus[m_username.toStdString()] = true;   //更改登录状态
         cloudModel->removeRows(0,cloudModel->rowCount());   //清空云端列表
+        QMessageBox::information(this, "login", "登录成功");
+    }
+    if(statusCode == "403") //用户不存在或密码错误
+    {
         QMessageBox::information(this, "login", msg);
     }
-    else//用户不存在或密码错误
+    if(statusCode == "500") //连接数据库失败
     {
         QMessageBox::information(this, "login", msg);
     }
 }
 
 //注册处理
-void MainWindow::processRegister(QJsonObject user)
+void MainWindow::processRegister()
 {
+    //获取http响应消息
+    QByteArray response = readMsg();
+
+    //断开信号和槽
+    disconnect(m_tcpsocket, &QTcpSocket::readyRead, this, &MainWindow::processRegister);
+
+    int headerEndIndex = response.indexOf("\r\n\r\n");
+    //获取状态行
+    QByteArray statusLine = response.left(headerEndIndex);
+
+    //获取响应体
+    QByteArray jsonBody = response.mid(headerEndIndex + 4);
+
+    //将状态行的各个部分存储到列表中
+    QStringList parts = QString::fromUtf8(statusLine).split(" ");
+
+    //提取状态码
+    QString statusCode = parts.at(1);
+
+    //将响应体转换为json对象
+    QJsonDocument doc = QJsonDocument::fromJson(jsonBody);
+    QJsonObject user = doc.object();
     QString msg = user["msg"].toString();
     //显示注册结果
-    QMessageBox::information(this, "register", msg);
-}
-
-//处理上传
-void MainWindow::processUpload(QJsonObject user)
-{
-    QString msg = user["msg"].toString();
-    //显示上传结果
-    QMessageBox::information(this, "uoload", msg);
-}
-
-//处理获得列表
-void MainWindow::processGetlist(QJsonObject user)
-{
-    QJsonArray list = user["list"].toArray();
-    for(int i = 0; i < list.size(); i++)
+    if(statusCode == "201") //注册成功
     {
-        // 创建一个标准项用于在ListView中显示图片名称
-        QStandardItem *item = new QStandardItem(list[i].toString());//获取图片名
-        cloudModel->appendRow(item);
+        QMessageBox::information(this, "register", msg);
+    }
+    if(statusCode == "403") //用户名已存在
+    {
+        QMessageBox::information(this, "register", msg);
+    }
+    if(statusCode == "500") //数据库连接失败或插入数据库失败
+    {
+        QMessageBox::information(this, "register", msg);
     }
 }
 
-//处理图片下载
-void MainWindow::processDownload(QJsonObject user)
+//处理上传
+void MainWindow::processUpload()
 {
+
+    //获取http响应消息
+    QByteArray response = readMsg();
+
+    disconnect(m_tcpsocket, &QTcpSocket::readyRead, this, &MainWindow::processUpload);
+
+    int headerEndIndex = response.indexOf("\r\n\r\n");
+    //获取状态行
+    QByteArray statusLine = response.left(headerEndIndex);
+
+    //获取响应体
+    QByteArray jsonBody = response.mid(headerEndIndex + 4);
+
+    //将状态行的各个部分存储到列表中
+    QStringList parts = QString::fromUtf8(statusLine).split(" ");
+
+    //提取状态码
+    QString statusCode = parts.at(1);
+
+    //将响应体转换为json对象
+    QJsonDocument doc = QJsonDocument::fromJson(jsonBody);
+    QJsonObject user = doc.object();
     QString msg = user["msg"].toString();
+
+    //显示上传结果
+    if(statusCode == "200") //上传成功
+    {
+        QMessageBox::information(this, "uoload", msg);
+    }
+    if(statusCode == "500") //上传失败
+    {
+        QMessageBox::information(this, "uoload", msg);
+    }
+
+}
+
+//处理获得列表
+void MainWindow::processGetlist()
+{
+    //获取http响应消息
+    QByteArray response = readMsg();
+
+    //断开信号和槽
+    disconnect(m_tcpsocket, &QTcpSocket::readyRead, this, &MainWindow::processGetlist);
+
+    int headerEndIndex = response.indexOf("\r\n\r\n");
+    //获取状态行
+    QByteArray statusLine = response.left(headerEndIndex);
+
+    //获取响应体
+    QByteArray jsonBody = response.mid(headerEndIndex + 4);
+
+    //将状态行的各个部分存储到列表中
+    QStringList parts = QString::fromUtf8(statusLine).split(" ");
+
+    //提取状态码
+    QString statusCode = parts.at(1);
+
+    //将响应体转换为json对象
+    QJsonDocument doc = QJsonDocument::fromJson(jsonBody);
+    QJsonObject user = doc.object();
+    if(statusCode == "200")//获取列表成功
+    {
+        QJsonArray list = user["list"].toArray();
+        for(int i = 0; i < list.size(); i++)
+        {
+            // 创建一个标准项用于在ListView中显示图片名称
+            QStandardItem *item = new QStandardItem(list[i].toString());//获取图片名
+            cloudModel->appendRow(item);
+        }
+    }
+    if(statusCode == "500")//获取列表失败
+    {
+        QString msg = user["msg"].toString();
+        QMessageBox::information(this, "getlist", msg);
+    }
+
+}
+
+//处理图片下载
+void MainWindow::processDownload()
+{
+    //获取http响应消息
+    QByteArray response = readMsg();
+
+    //断开信号和槽
+    disconnect(m_tcpsocket, &QTcpSocket::readyRead, this, &MainWindow::processDownload);
+
+    int headerEndIndex = response.indexOf("\r\n\r\n");
+    //获取状态行
+    QByteArray statusLine = response.left(headerEndIndex);
+
+    //获取响应体
+    QByteArray jsonBody = response.mid(headerEndIndex + 4);
+
+    //将状态行的各个部分存储到列表中
+    QStringList parts = QString::fromUtf8(statusLine).split(" ");
+
+    //提取状态码
+    QString statusCode = parts.at(1);
+
+    //将响应体转换为json对象
+    QJsonDocument doc = QJsonDocument::fromJson(jsonBody);
+    QJsonObject user = doc.object();
+    QString msg = user["msg"].toString();
+
     //下载成功显示图片
-    if(msg == "下载成功")
+    if(statusCode == "200")
     {
         QString imagename = user["imagename"].toString();
         //base64解码
@@ -557,18 +706,45 @@ void MainWindow::processDownload(QJsonObject user)
             qDebug() << "无法加载图片数据";
         }
     }
-    else //下载失败显示下载结果
+    if(statusCode == "403") //图片不存在
+    {
+        QMessageBox::information(this, "download", msg);
+    }
+    if(statusCode == "500") //数据库连接失败
     {
         QMessageBox::information(this, "download", msg);
     }
 }
 
 //图片删除处理
-void MainWindow::processDelete(QJsonObject user)
+void MainWindow::processDelete()
 {
+    //获取http响应消息
+    QByteArray response = readMsg();
+
+    //断开信号和槽
+    disconnect(m_tcpsocket, &QTcpSocket::readyRead, this, &MainWindow::processDelete);
+
+    int headerEndIndex = response.indexOf("\r\n\r\n");
+    //获取状态行
+    QByteArray statusLine = response.left(headerEndIndex);
+
+    //获取响应体
+    QByteArray jsonBody = response.mid(headerEndIndex + 4);
+
+    //将状态行的各个部分存储到列表中
+    QStringList parts = QString::fromUtf8(statusLine).split(" ");
+
+    //提取状态码
+    QString statusCode = parts.at(1);
+
+    //将响应体转换为json对象
+    QJsonDocument doc = QJsonDocument::fromJson(jsonBody);
+    QJsonObject user = doc.object();
     QString msg = user["msg"].toString();
+
     //删除成功返回新的图片列表
-    if(msg == "删除成功")
+    if(statusCode == "200") //删除成功
     {
         //清空云端列表
         cloudModel->removeRows(0,cloudModel->rowCount());
@@ -581,7 +757,11 @@ void MainWindow::processDelete(QJsonObject user)
             cloudModel->appendRow(item);
         }
     }
-    else //删除失败
+    if(statusCode == "500") //删除失败或数据库连接失败
+    {
+        QMessageBox::information(this, "delete", msg);
+    }
+    if(statusCode == "403") //图片不存在
     {
         QMessageBox::information(this, "delete", msg);
     }

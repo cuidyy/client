@@ -48,12 +48,11 @@ static constexpr auto qt_meta_stringdata_CLASSMainWindowENDCLASS = QtMocHelpers:
     "on_ListViewCloudDoubleClicked",
     "QModelIndex",
     "index",
-    "on_ListViewCloudRightClicked",
-    "processMsg"
+    "on_ListViewCloudRightClicked"
 );
 #else  // !QT_MOC_HAS_STRING_DATA
 struct qt_meta_stringdata_CLASSMainWindowENDCLASS_t {
-    uint offsetsAndSizes[24];
+    uint offsetsAndSizes[22];
     char stringdata0[11];
     char stringdata1[27];
     char stringdata2[1];
@@ -65,7 +64,6 @@ struct qt_meta_stringdata_CLASSMainWindowENDCLASS_t {
     char stringdata8[12];
     char stringdata9[6];
     char stringdata10[29];
-    char stringdata11[11];
 };
 #define QT_MOC_LITERAL(ofs, len) \
     uint(sizeof(qt_meta_stringdata_CLASSMainWindowENDCLASS_t::offsetsAndSizes) + ofs), len 
@@ -81,8 +79,7 @@ Q_CONSTINIT static const qt_meta_stringdata_CLASSMainWindowENDCLASS_t qt_meta_st
         QT_MOC_LITERAL(156, 29),  // "on_ListViewCloudDoubleClicked"
         QT_MOC_LITERAL(186, 11),  // "QModelIndex"
         QT_MOC_LITERAL(198, 5),  // "index"
-        QT_MOC_LITERAL(204, 28),  // "on_ListViewCloudRightClicked"
-        QT_MOC_LITERAL(233, 10)   // "processMsg"
+        QT_MOC_LITERAL(204, 28)   // "on_ListViewCloudRightClicked"
     },
     "MainWindow",
     "on_pushButtonLogin_clicked",
@@ -94,8 +91,7 @@ Q_CONSTINIT static const qt_meta_stringdata_CLASSMainWindowENDCLASS_t qt_meta_st
     "on_ListViewCloudDoubleClicked",
     "QModelIndex",
     "index",
-    "on_ListViewCloudRightClicked",
-    "processMsg"
+    "on_ListViewCloudRightClicked"
 };
 #undef QT_MOC_LITERAL
 #endif // !QT_MOC_HAS_STRING_DATA
@@ -107,7 +103,7 @@ Q_CONSTINIT static const uint qt_meta_data_CLASSMainWindowENDCLASS[] = {
       11,       // revision
        0,       // classname
        0,    0, // classinfo
-       8,   14, // methods
+       7,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
@@ -115,14 +111,13 @@ Q_CONSTINIT static const uint qt_meta_data_CLASSMainWindowENDCLASS[] = {
        0,       // signalCount
 
  // slots: name, argc, parameters, tag, flags, initial metatype offsets
-       1,    0,   62,    2, 0x08,    1 /* Private */,
-       3,    0,   63,    2, 0x08,    2 /* Private */,
-       4,    0,   64,    2, 0x08,    3 /* Private */,
-       5,    0,   65,    2, 0x08,    4 /* Private */,
-       6,    0,   66,    2, 0x08,    5 /* Private */,
-       7,    1,   67,    2, 0x08,    6 /* Private */,
-      10,    1,   70,    2, 0x08,    8 /* Private */,
-      11,    0,   73,    2, 0x08,   10 /* Private */,
+       1,    0,   56,    2, 0x08,    1 /* Private */,
+       3,    0,   57,    2, 0x08,    2 /* Private */,
+       4,    0,   58,    2, 0x08,    3 /* Private */,
+       5,    0,   59,    2, 0x08,    4 /* Private */,
+       6,    0,   60,    2, 0x08,    5 /* Private */,
+       7,    1,   61,    2, 0x08,    6 /* Private */,
+      10,    1,   64,    2, 0x08,    8 /* Private */,
 
  // slots: parameters
     QMetaType::Void,
@@ -132,7 +127,6 @@ Q_CONSTINIT static const uint qt_meta_data_CLASSMainWindowENDCLASS[] = {
     QMetaType::Void,
     QMetaType::Void, 0x80000000 | 8,    9,
     QMetaType::Void, QMetaType::QPoint,    9,
-    QMetaType::Void,
 
        0        // eod
 };
@@ -161,9 +155,7 @@ Q_CONSTINIT const QMetaObject MainWindow::staticMetaObject = { {
         QtPrivate::TypeAndForceComplete<const QModelIndex &, std::false_type>,
         // method 'on_ListViewCloudRightClicked'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
-        QtPrivate::TypeAndForceComplete<const QPoint &, std::false_type>,
-        // method 'processMsg'
-        QtPrivate::TypeAndForceComplete<void, std::false_type>
+        QtPrivate::TypeAndForceComplete<const QPoint &, std::false_type>
     >,
     nullptr
 } };
@@ -181,7 +173,6 @@ void MainWindow::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, 
         case 4: _t->on_pushButtonFlush_clicked(); break;
         case 5: _t->on_ListViewCloudDoubleClicked((*reinterpret_cast< std::add_pointer_t<QModelIndex>>(_a[1]))); break;
         case 6: _t->on_ListViewCloudRightClicked((*reinterpret_cast< std::add_pointer_t<QPoint>>(_a[1]))); break;
-        case 7: _t->processMsg(); break;
         default: ;
         }
     }
@@ -206,13 +197,13 @@ int MainWindow::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 8)
+        if (_id < 7)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 8;
+        _id -= 7;
     } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 8)
+        if (_id < 7)
             *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType();
-        _id -= 8;
+        _id -= 7;
     }
     return _id;
 }

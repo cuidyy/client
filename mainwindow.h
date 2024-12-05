@@ -55,23 +55,23 @@ private slots:
 
     void on_ListViewCloudRightClicked(const QPoint &index);
 
-    void processMsg();                      //处理消息
+    //void processMsg();                      //处理消息
 private:
     QJsonObject getInput();     //获取输入值
 
-    QJsonObject readMsg();      //读取消息
+    QByteArray readMsg();      //读取消息
 
-    void processLogin(QJsonObject user);    //回复登录消息
+    void processLogin();    //回复登录消息
 
-    void processRegister(QJsonObject user); //回复注册消息
+    void processRegister(); //回复注册消息
 
-    void processUpload(QJsonObject user);   //回复上传消息
+    void processUpload();   //回复上传消息
 
-    void processGetlist(QJsonObject user);  //处理获得图片列表消息
+    void processGetlist();  //处理获得图片列表消息
 
-    void processDownload(QJsonObject user); //处理图片下载消息
+    void processDownload(); //处理图片下载消息
 
-    void processDelete(QJsonObject user);   //处理图片删除消息
+    void processDelete();   //处理图片删除消息
 
     bool isImageExists(const QString &fileName); //判断图片是否已在图片列表
 
@@ -82,6 +82,7 @@ private:
     QString m_username; //用户名
     QStandardItemModel *imageModel;//QStandardItemModel 对象,用于管理要在上传列表中展示的数据
     QList<QString> imageList;//图片列表
+    int image_count = 0;//记录上传的图片数量
     QStandardItemModel *cloudModel;//管理云端列表
     QGraphicsScene *graphicsScene;//用于管理图形项,在这里用于展示图片
     QGraphicsView *graphicsView;//是用于在窗口中查看 QGraphicsScene 内容的视图类
