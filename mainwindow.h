@@ -82,7 +82,7 @@ private:
     QString m_username; //用户名
     QStandardItemModel *imageModel;//QStandardItemModel 对象,用于管理要在上传列表中展示的数据
     QList<QString> imageList;//图片列表
-    int image_count = 0;//记录上传的图片数量
+    int image_count = 0;//记录要上传的图片数量
     QStandardItemModel *cloudModel;//管理云端列表
     QGraphicsScene *graphicsScene;//用于管理图形项,在这里用于展示图片
     QGraphicsView *graphicsView;//是用于在窗口中查看 QGraphicsScene 内容的视图类

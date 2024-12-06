@@ -250,8 +250,7 @@ void MainWindow::on_pushButtonUpload_clicked()
     }
 
 
-    //服务器消息处理
-    connect(m_tcpsocket, &QTcpSocket::readyRead, this, &MainWindow::processUpload);
+
 
     for(const QString &fileName : imageList)
     {
@@ -259,6 +258,12 @@ void MainWindow::on_pushButtonUpload_clicked()
         // 遍历图片列表，逐个上传
         if (file.open(QIODevice::ReadOnly))
         {
+            if(image_count == 0)
+            {
+                //服务器消息处理
+                connect(m_tcpsocket, &QTcpSocket::readyRead, this, &MainWindow::processUpload);
+            }
+            image_count++;
 
             QByteArray imageData = file.readAll();
 
@@ -432,17 +437,16 @@ QByteArray MainWindow::readMsg()
     uint32_t msglen;//数据长度
     memcpy(&msglen, head.data(), 4);
     msglen = ntohl(msglen);
-
     //读取数据
     QByteArray msg;
     while(m_tcpsocket->bytesAvailable() < msglen)//数据不完整
     {
         QCoreApplication::processEvents();
     }
-    msg += m_tcpsocket->readAll();
+
+    msg += m_tcpsocket->read(msglen);
     //base64解码
     QByteArray decode_msg = QByteArray::fromBase64(msg);
-
     return decode_msg;
 }
 
@@ -574,45 +578,47 @@ void MainWindow::processRegister()
 //处理上传
 void MainWindow::processUpload()
 {
+    while(image_count != 0)//上传了多少张就要接收多少次消息
+    {
+        //获取http响应消息
+        QByteArray response = readMsg();
 
-    //获取http响应消息
-    QByteArray response = readMsg();
+        image_count--;
 
+        int headerEndIndex = response.indexOf("\r\n\r\n");
+        //获取状态行
+        QByteArray statusLine = response.left(headerEndIndex);
+
+        //获取响应体
+        QByteArray jsonBody = response.mid(headerEndIndex + 4);
+
+        //将状态行的各个部分存储到列表中
+        QStringList parts = QString::fromUtf8(statusLine).split(" ");
+        //提取状态码
+        QString statusCode = parts.at(1);
+
+        //将响应体转换为json对象
+        QJsonDocument doc = QJsonDocument::fromJson(jsonBody);
+        QJsonObject user = doc.object();
+        QString msg = user["msg"].toString();
+        //显示上传结果
+        if(statusCode == "200") //上传成功
+        {
+            QMessageBox::information(this, "uoload", msg);
+        }
+        if(statusCode == "500") //上传失败
+        {
+            QMessageBox::information(this, "uoload", msg);
+        }
+    }
+    //断开信号和槽
     disconnect(m_tcpsocket, &QTcpSocket::readyRead, this, &MainWindow::processUpload);
-
-    int headerEndIndex = response.indexOf("\r\n\r\n");
-    //获取状态行
-    QByteArray statusLine = response.left(headerEndIndex);
-
-    //获取响应体
-    QByteArray jsonBody = response.mid(headerEndIndex + 4);
-
-    //将状态行的各个部分存储到列表中
-    QStringList parts = QString::fromUtf8(statusLine).split(" ");
-
-    //提取状态码
-    QString statusCode = parts.at(1);
-
-    //将响应体转换为json对象
-    QJsonDocument doc = QJsonDocument::fromJson(jsonBody);
-    QJsonObject user = doc.object();
-    QString msg = user["msg"].toString();
-
-    //显示上传结果
-    if(statusCode == "200") //上传成功
-    {
-        QMessageBox::information(this, "uoload", msg);
-    }
-    if(statusCode == "500") //上传失败
-    {
-        QMessageBox::information(this, "uoload", msg);
-    }
-
 }
 
 //处理获得列表
 void MainWindow::processGetlist()
 {
+    qDebug() << "调用Getlist";
     //获取http响应消息
     QByteArray response = readMsg();
 
