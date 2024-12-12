@@ -22,6 +22,8 @@
 #include <QGraphicsScene>
 #include <QGraphicsView>
 #include <QImage>
+#include <QSslSocket>
+#include <QSslConfiguration>
 #include "qaesencryption.h"
 using namespace std;
 
@@ -77,7 +79,7 @@ private:
 
 private:
     Ui::MainWindow *ui;
-    QTcpSocket *m_tcpsocket;//客户端套接字类
+    QSslSocket *m_tcpsocket;//客户端套接字类
     map<string, bool> userLoginStatus; //判断用户登录状态
     QString m_username; //用户名
     QStandardItemModel *imageModel;//QStandardItemModel 对象,用于管理要在上传列表中展示的数据

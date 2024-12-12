@@ -10,12 +10,19 @@ MainWindow::MainWindow(QWidget *parent)
     setFixedSize(this->width(), this->height());
 
     //初始化客户端套接字
-    m_tcpsocket = new QTcpSocket(this);
+    m_tcpsocket = new QSslSocket(this);
     //连接服务器
-    m_tcpsocket->connectToHost(QHostAddress("192.168.234.128"), 8080);
+    if(m_tcpsocket->state() != QSslSocket::ConnectedState) {
+        m_tcpsocket->connectToHostEncrypted("192.168.234.128", 8080);
+        //连接超时
+        if(!m_tcpsocket->waitForEncrypted(1000)) {
+            QMessageBox::information(this, "", "连接服务器超时");
+            exit(1);
+        }
+    }
 
     //连接断开
-    connect(m_tcpsocket, &QTcpSocket::disconnected, this, [=]()
+    connect(m_tcpsocket, &QSslSocket::disconnected, this, [=]()
     {
         QMessageBox::information(this, "", "已与服务器断开连接");
         exit(1);
@@ -132,7 +139,7 @@ void MainWindow::on_pushButtonLogin_clicked()
     msg_base64.prepend(reinterpret_cast<const char*>(&size), sizeof(size));
 
     //服务器消息处理
-    connect(m_tcpsocket, &QTcpSocket::readyRead, this, &MainWindow::processLogin);
+    connect(m_tcpsocket, &QSslSocket::readyRead, this, &MainWindow::processLogin);
 
     //发送消息
     m_tcpsocket->write(msg_base64);
@@ -189,7 +196,7 @@ void MainWindow::on_pushButtonRegister_clicked()
     msg_base64.prepend(reinterpret_cast<const char*>(&size), sizeof(size));
 
     //服务器消息处理
-    connect(m_tcpsocket, &QTcpSocket::readyRead, this, &MainWindow::processRegister);
+    connect(m_tcpsocket, &QSslSocket::readyRead, this, &MainWindow::processRegister);
 
     //发送消息
     m_tcpsocket->write(msg_base64);
@@ -261,7 +268,7 @@ void MainWindow::on_pushButtonUpload_clicked()
             if(image_count == 0)
             {
                 //服务器消息处理
-                connect(m_tcpsocket, &QTcpSocket::readyRead, this, &MainWindow::processUpload);
+                connect(m_tcpsocket, &QSslSocket::readyRead, this, &MainWindow::processUpload);
             }
             image_count++;
 
@@ -354,7 +361,7 @@ void MainWindow::on_pushButtonFlush_clicked()
     msg_base64.prepend(reinterpret_cast<const char*>(&size), sizeof(size));
 
     //服务器消息处理
-    connect(m_tcpsocket, &QTcpSocket::readyRead, this, &MainWindow::processGetlist);
+    connect(m_tcpsocket, &QSslSocket::readyRead, this, &MainWindow::processGetlist);
 
     // 通过TCP发送数据
     m_tcpsocket->write(msg_base64);
@@ -385,7 +392,7 @@ void MainWindow::on_ListViewCloudDoubleClicked(const QModelIndex &index)
     msg_base64.prepend(reinterpret_cast<const char*>(&size), sizeof(size));
 
     //服务器消息处理
-    connect(m_tcpsocket, &QTcpSocket::readyRead, this, &MainWindow::processDownload);
+    connect(m_tcpsocket, &QSslSocket::readyRead, this, &MainWindow::processDownload);
 
     // 通过TCP发送数据
     m_tcpsocket->write(msg_base64);
@@ -417,7 +424,7 @@ void MainWindow::on_ListViewCloudRightClicked(const QPoint &index)
     msg_base64.prepend(reinterpret_cast<const char*>(&size), sizeof(size));
 
     //服务器消息处理
-    connect(m_tcpsocket, &QTcpSocket::readyRead, this, &MainWindow::processDelete);
+    connect(m_tcpsocket, &QSslSocket::readyRead, this, &MainWindow::processDelete);
 
     // 通过TCP发送数据
     m_tcpsocket->write(msg_base64);
@@ -495,7 +502,7 @@ void MainWindow::processLogin()
     QByteArray response = readMsg();
 
     //断开信号和槽
-    disconnect(m_tcpsocket, &QTcpSocket::readyRead, this, &MainWindow::processLogin);
+    disconnect(m_tcpsocket, &QSslSocket::readyRead, this, &MainWindow::processLogin);
 
     int headerEndIndex = response.indexOf("\r\n\r\n");
     //获取状态行
@@ -541,7 +548,7 @@ void MainWindow::processRegister()
     QByteArray response = readMsg();
 
     //断开信号和槽
-    disconnect(m_tcpsocket, &QTcpSocket::readyRead, this, &MainWindow::processRegister);
+    disconnect(m_tcpsocket, &QSslSocket::readyRead, this, &MainWindow::processRegister);
 
     int headerEndIndex = response.indexOf("\r\n\r\n");
     //获取状态行
@@ -612,7 +619,7 @@ void MainWindow::processUpload()
         }
     }
     //断开信号和槽
-    disconnect(m_tcpsocket, &QTcpSocket::readyRead, this, &MainWindow::processUpload);
+    disconnect(m_tcpsocket, &QSslSocket::readyRead, this, &MainWindow::processUpload);
 }
 
 //处理获得列表
@@ -623,7 +630,7 @@ void MainWindow::processGetlist()
     QByteArray response = readMsg();
 
     //断开信号和槽
-    disconnect(m_tcpsocket, &QTcpSocket::readyRead, this, &MainWindow::processGetlist);
+    disconnect(m_tcpsocket, &QSslSocket::readyRead, this, &MainWindow::processGetlist);
 
     int headerEndIndex = response.indexOf("\r\n\r\n");
     //获取状态行
@@ -666,7 +673,7 @@ void MainWindow::processDownload()
     QByteArray response = readMsg();
 
     //断开信号和槽
-    disconnect(m_tcpsocket, &QTcpSocket::readyRead, this, &MainWindow::processDownload);
+    disconnect(m_tcpsocket, &QSslSocket::readyRead, this, &MainWindow::processDownload);
 
     int headerEndIndex = response.indexOf("\r\n\r\n");
     //获取状态行
@@ -729,7 +736,7 @@ void MainWindow::processDelete()
     QByteArray response = readMsg();
 
     //断开信号和槽
-    disconnect(m_tcpsocket, &QTcpSocket::readyRead, this, &MainWindow::processDelete);
+    disconnect(m_tcpsocket, &QSslSocket::readyRead, this, &MainWindow::processDelete);
 
     int headerEndIndex = response.indexOf("\r\n\r\n");
     //获取状态行
