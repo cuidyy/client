@@ -11,6 +11,22 @@ MainWindow::MainWindow(QWidget *parent)
 
     //初始化客户端套接字
     m_tcpsocket = new QSslSocket(this);
+
+    // 加载并信任CA证书
+    QFile certFile("C:\\Users\\administered\\Desktop\\client\\ca.crt");
+    if (certFile.open(QIODevice::ReadOnly)) {
+        QSslCertificate cert(&certFile, QSsl::Pem);
+        QList<QSslCertificate> certs;
+        certs.append(cert);
+
+        QSslConfiguration sslConfig = m_tcpsocket->sslConfiguration();
+        sslConfig.setCaCertificates(certs);
+        m_tcpsocket->setSslConfiguration(sslConfig);
+    } else {
+        qDebug() << "Failed to load CA certificate";
+    }
+    //设置验证模式
+    m_tcpsocket->setPeerVerifyMode(QSslSocket::VerifyPeer);
     //连接服务器
     if(m_tcpsocket->state() != QSslSocket::ConnectedState) {
         m_tcpsocket->connectToHostEncrypted("192.168.234.128", 8080);
