@@ -61,7 +61,7 @@ private slots:
 private:
     QJsonObject getInput();     //获取输入值
 
-    QByteArray readMsg();      //读取消息
+    bool readMsg();      //读取消息
 
     void processLogin();    //回复登录消息
 
@@ -82,6 +82,7 @@ private:
     QSslSocket *m_tcpsocket;//客户端套接字类
     map<string, bool> userLoginStatus; //判断用户登录状态
     QString m_username; //用户名
+    QByteArray response; //存储服务器回复的消息
     QStandardItemModel *imageModel;//QStandardItemModel 对象,用于管理要在上传列表中展示的数据
     QList<QString> imageList;//图片列表
     int image_count = 0;//记录要上传的图片数量

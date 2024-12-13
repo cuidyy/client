@@ -257,8 +257,6 @@ void MainWindow::on_pushButtonUpload_clicked()
     }
 
 
-
-
     for(const QString &fileName : imageList)
     {
         QFile file(fileName);
@@ -306,7 +304,6 @@ void MainWindow::on_pushButtonUpload_clicked()
 
             //将请求报文字符串转换为QByteArray
             QByteArray byteArray = request.toUtf8();
-
             //转换为base64编码
             QByteArray msg_base64 = byteArray.toBase64().constData();
 
@@ -432,29 +429,36 @@ void MainWindow::on_ListViewCloudRightClicked(const QPoint &index)
 
 
 //读取数据
-QByteArray MainWindow::readMsg()
+bool MainWindow::readMsg()
 {
     //读取数据包头
     while(m_tcpsocket->bytesAvailable() < 4)//数据包头不完整
     {
-        QCoreApplication::processEvents();
+        return false;
     }
-    QByteArray head = m_tcpsocket->read(4);
+    QByteArray head = m_tcpsocket->peek(4);//只从缓冲区复制包头，并不读取出来，保证数据的完整
 
     uint32_t msglen;//数据长度
     memcpy(&msglen, head.data(), 4);
     msglen = ntohl(msglen);
+
     //读取数据
     QByteArray msg;
-    while(m_tcpsocket->bytesAvailable() < msglen)//数据不完整
+    while(m_tcpsocket->bytesAvailable() < msglen + 4)//数据不完整
     {
-        QCoreApplication::processEvents();
+        return false;
     }
+    //丢弃掉头部4字节数据
+    QByteArray temp = m_tcpsocket->read(4);
 
     msg += m_tcpsocket->read(msglen);
+
     //base64解码
     QByteArray decode_msg = QByteArray::fromBase64(msg);
-    return decode_msg;
+
+    //放入response
+    response = decode_msg;
+    return true;
 }
 
 //消息处理
@@ -499,8 +503,10 @@ QByteArray MainWindow::readMsg()
 void MainWindow::processLogin()
 {
     //获取http响应消息
-    QByteArray response = readMsg();
-
+    if(!readMsg())//数据不完整
+    {
+        return;
+    }
     //断开信号和槽
     disconnect(m_tcpsocket, &QSslSocket::readyRead, this, &MainWindow::processLogin);
 
@@ -545,7 +551,10 @@ void MainWindow::processLogin()
 void MainWindow::processRegister()
 {
     //获取http响应消息
-    QByteArray response = readMsg();
+    if(!readMsg())//数据不完整
+    {
+        return;
+    }
 
     //断开信号和槽
     disconnect(m_tcpsocket, &QSslSocket::readyRead, this, &MainWindow::processRegister);
@@ -585,49 +594,55 @@ void MainWindow::processRegister()
 //处理上传
 void MainWindow::processUpload()
 {
-    while(image_count != 0)//上传了多少张就要接收多少次消息
+    //获取http响应消息
+    if(!readMsg())//数据不完整
     {
-        //获取http响应消息
-        QByteArray response = readMsg();
-
-        image_count--;
-
-        int headerEndIndex = response.indexOf("\r\n\r\n");
-        //获取状态行
-        QByteArray statusLine = response.left(headerEndIndex);
-
-        //获取响应体
-        QByteArray jsonBody = response.mid(headerEndIndex + 4);
-
-        //将状态行的各个部分存储到列表中
-        QStringList parts = QString::fromUtf8(statusLine).split(" ");
-        //提取状态码
-        QString statusCode = parts.at(1);
-
-        //将响应体转换为json对象
-        QJsonDocument doc = QJsonDocument::fromJson(jsonBody);
-        QJsonObject user = doc.object();
-        QString msg = user["msg"].toString();
-        //显示上传结果
-        if(statusCode == "200") //上传成功
-        {
-            QMessageBox::information(this, "uoload", msg);
-        }
-        if(statusCode == "500") //上传失败
-        {
-            QMessageBox::information(this, "uoload", msg);
-        }
+        return;
     }
-    //断开信号和槽
-    disconnect(m_tcpsocket, &QSslSocket::readyRead, this, &MainWindow::processUpload);
+
+    image_count--;
+
+    int headerEndIndex = response.indexOf("\r\n\r\n");
+    //获取状态行
+    QByteArray statusLine = response.left(headerEndIndex);
+
+    //获取响应体
+    QByteArray jsonBody = response.mid(headerEndIndex + 4);
+
+    //将状态行的各个部分存储到列表中
+    QStringList parts = QString::fromUtf8(statusLine).split(" ");
+    //提取状态码
+    QString statusCode = parts.at(1);
+
+    //将响应体转换为json对象
+    QJsonDocument doc = QJsonDocument::fromJson(jsonBody);
+    QJsonObject user = doc.object();
+    QString msg = user["msg"].toString();
+    //显示上传结果
+    if(statusCode == "200") //上传成功
+    {
+        QMessageBox::information(this, "uoload", msg);
+    }
+    if(statusCode == "500") //上传失败
+    {
+        QMessageBox::information(this, "uoload", msg);
+    }
+
+    if(image_count == 0)
+    {
+        //断开信号和槽
+        disconnect(m_tcpsocket, &QSslSocket::readyRead, this, &MainWindow::processUpload);
+    }
 }
 
 //处理获得列表
 void MainWindow::processGetlist()
 {
-    qDebug() << "调用Getlist";
     //获取http响应消息
-    QByteArray response = readMsg();
+    if(!readMsg())//数据不完整
+    {
+        return;
+    }
 
     //断开信号和槽
     disconnect(m_tcpsocket, &QSslSocket::readyRead, this, &MainWindow::processGetlist);
@@ -670,7 +685,10 @@ void MainWindow::processGetlist()
 void MainWindow::processDownload()
 {
     //获取http响应消息
-    QByteArray response = readMsg();
+    if(!readMsg())//数据不完整
+    {
+        return;
+    }
 
     //断开信号和槽
     disconnect(m_tcpsocket, &QSslSocket::readyRead, this, &MainWindow::processDownload);
@@ -733,7 +751,10 @@ void MainWindow::processDownload()
 void MainWindow::processDelete()
 {
     //获取http响应消息
-    QByteArray response = readMsg();
+    if(!readMsg())//数据不完整
+    {
+        return;
+    }
 
     //断开信号和槽
     disconnect(m_tcpsocket, &QSslSocket::readyRead, this, &MainWindow::processDelete);
