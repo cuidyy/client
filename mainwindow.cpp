@@ -6,8 +6,14 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    setWindowTitle("客户端");
+    setWindowTitle("用户图片云存储系统");
     setFixedSize(this->width(), this->height());
+
+    // 设置主窗口背景样式
+    this->setStyleSheet("QMainWindow { background-image: url(:/new/prefix1/background.png); background-position: center; background-repeat: no-repeat; background-size: 100% 100%; }");
+    
+    // 设置中央部件为透明
+    ui->centralwidget->setStyleSheet("QWidget { background: transparent; }");
 
     //初始化客户端套接字
     m_tcpsocket = new QSslSocket(this);
@@ -25,6 +31,7 @@ MainWindow::MainWindow(QWidget *parent)
     } else {
         qDebug() << "Failed to load CA certificate";
     }
+    
     //设置验证模式
     m_tcpsocket->setPeerVerifyMode(QSslSocket::VerifyPeer);
     //连接服务器
@@ -51,6 +58,150 @@ MainWindow::MainWindow(QWidget *parent)
         exit(1);
     }
 
+    // 获取stackedWidget引用和各个页面
+    stackedWidget = ui->stackedWidget;
+    loginPage = ui->loginPage;
+    functionPage = ui->functionPage;
+    uploadPage = ui->uploadPage;
+    cloudPage = ui->cloudPage;
+    managePage = ui->managePage;
+    
+    // 设置所有窗口Widget为透明，这样能看到主窗口的背景
+    loginPage->setStyleSheet("QWidget#loginPage { background: transparent; }");
+    functionPage->setStyleSheet("QWidget#functionPage { background: transparent; }");
+    uploadPage->setStyleSheet("QWidget#uploadPage { background: transparent; }");
+    cloudPage->setStyleSheet("QWidget#cloudPage { background: transparent; }");
+    managePage->setStyleSheet("QWidget#managePage { background: transparent; }");
+    
+    // 设置堆叠部件为透明
+    stackedWidget->setStyleSheet("QStackedWidget { background: transparent; }");
+    
+    // 美化按钮样式
+    QString buttonStyle = "QPushButton {"
+                         "border-radius: 5px;"
+                         "padding: 5px;"
+                         "color: white;"
+                         "border: none;"
+                         "background-color: rgba(50, 50, 50, 200);"
+                         "}"
+                         "QPushButton:hover {"
+                         "background-color: rgba(70, 70, 70, 220);"
+                         "}"
+                         "QPushButton:pressed {"
+                         "background-color: rgba(30, 30, 30, 250);"
+                         "}";
+    
+    // 应用登录和注册按钮样式
+    ui->pushButtonLogin->setStyleSheet("QPushButton {"
+                                     "border-radius: 5px;"
+                                     "padding: 5px;"
+                                     "color: white;"
+                                     "border: none;"
+                                     "background-color: rgba(0, 120, 215, 220);"
+                                     "}"
+                                     "QPushButton:hover {"
+                                     "background-color: rgba(0, 130, 230, 240);"
+                                     "}"
+                                     "QPushButton:pressed {"
+                                     "background-color: rgba(0, 100, 200, 250);"
+                                     "}");
+    
+    ui->pushButtonRegister->setStyleSheet("QPushButton {"
+                                        "border-radius: 5px;"
+                                        "padding: 5px;"
+                                        "color: white;"
+                                        "border: none;"
+                                        "background-color: rgba(60, 160, 80, 220);"
+                                        "}"
+                                        "QPushButton:hover {"
+                                        "background-color: rgba(70, 170, 90, 240);"
+                                        "}"
+                                        "QPushButton:pressed {"
+                                        "background-color: rgba(50, 150, 70, 250);"
+                                        "}");
+    
+    // 应用功能页面按钮样式
+    ui->pushButtonUploadFunction->setStyleSheet(buttonStyle);
+    ui->pushButtonCloudFunction->setStyleSheet(buttonStyle);
+    ui->pushButtonManageFunction->setStyleSheet(buttonStyle);
+    ui->pushButtonLogout->setStyleSheet(buttonStyle);
+    
+    // 应用上传功能页面按钮样式
+    ui->pushButtonSelectFile->setStyleSheet(buttonStyle);
+    ui->pushButtonUpload->setStyleSheet(buttonStyle);
+    ui->pushButtonBackFromUpload->setStyleSheet(buttonStyle);
+    
+    // 应用云端功能页面按钮样式
+    ui->pushButtonFlush->setStyleSheet(buttonStyle);
+    ui->pushButtonBackFromCloud->setStyleSheet(buttonStyle);
+    
+    // 应用云端管理页面按钮样式
+    ui->pushButtonDownload->setStyleSheet(buttonStyle);
+    ui->pushButtonDelete->setStyleSheet(buttonStyle);
+    ui->pushButtonShare->setStyleSheet(buttonStyle);
+    ui->pushButtonBackFromManage->setStyleSheet(buttonStyle);
+    
+    // 美化标签样式
+    QString labelStyle = "QLabel {"
+                        "color: white;"
+                        "background-color: rgba(0, 0, 0, 100);"
+                        "border-radius: 5px;"
+                        "padding: 5px;"
+                        "}";
+    
+    ui->labelTitle->setStyleSheet(labelStyle);
+    ui->labelWelcome->setStyleSheet(labelStyle);
+    ui->label_3->setStyleSheet(labelStyle);
+    ui->label_4->setStyleSheet(labelStyle);
+    ui->label_5->setStyleSheet("QLabel {"
+                              "color: white;"
+                              "background-color: rgba(0, 0, 0, 70);"
+                              "border-radius: 5px;"
+                              "padding: 3px;"
+                              "}");
+    
+    // 用户名和密码标签样式
+    ui->label->setStyleSheet("QLabel {"
+                           "color: white;"
+                           "background-color: rgba(0, 0, 0, 70);"
+                           "border-radius: 5px;"
+                           "padding: 3px;"
+                           "}");
+    
+    ui->label_2->setStyleSheet("QLabel {"
+                             "color: white;"
+                             "background-color: rgba(0, 0, 0, 70);"
+                             "border-radius: 5px;"
+                             "padding: 3px;"
+                             "}");
+    
+    // 美化输入框样式
+    QString inputStyle = "QLineEdit {"
+                        "background-color: rgba(255, 255, 255, 180);"
+                        "border-radius: 5px;"
+                        "border: 1px solid rgba(255, 255, 255, 100);"
+                        "padding: 3px;"
+                        "color: rgb(10, 10, 10);"
+                        "}";
+    
+    ui->lineEditUserName->setStyleSheet(inputStyle);
+    ui->lineEditPassWord->setStyleSheet(inputStyle);
+    
+    // 美化列表视图
+    QString listViewStyle = "QListView {"
+                           "background-color: rgba(255, 255, 255, 150);"
+                           "border-radius: 5px;"
+                           "border: 1px solid rgba(255, 255, 255, 80);"
+                           "padding: 5px;"
+                           "color: rgb(10, 10, 10);"
+                           "}";
+    ui->listViewUpload->setStyleSheet(listViewStyle);
+    ui->listViewCloud->setStyleSheet(listViewStyle);
+    ui->listViewManage->setStyleSheet(listViewStyle);
+    
+    // 初始界面为登录界面
+    switchToLoginPage();
+
     //QStandardItemModel 对象,用于管理要在ListViewUpload中展示的数据
     imageModel = new QStandardItemModel(this);
     //建立了 QListView和 QStandardItemModel之间的关联，使得ListView能够从imageModel中获取数据进行展示。
@@ -59,6 +210,10 @@ MainWindow::MainWindow(QWidget *parent)
     //QStandardItemModel 对象,用于管理要在ListViewCloud中展示的数据
     cloudModel = new QStandardItemModel(this);
     ui->listViewCloud->setModel(cloudModel);
+
+    //创建云端图片管理列表模型
+    manageModel = new QStandardItemModel(this);
+    ui->listViewManage->setModel(manageModel);
 
     //当双击云端列表的项时下载图片
     connect(ui->listViewCloud, SIGNAL(doubleClicked(const QModelIndex &)), this, SLOT(on_ListViewCloudDoubleClicked(const QModelIndex &)));
@@ -74,7 +229,79 @@ MainWindow::MainWindow(QWidget *parent)
     graphicsView->setGeometry(100, 100, 500, 500);
     // 将视图设置为一个独立的窗口形式
     graphicsView->setWindowFlags(Qt::Window);
+}
 
+// 界面切换函数
+void MainWindow::switchToLoginPage()
+{
+    // 切换到登录界面
+    stackedWidget->setCurrentWidget(loginPage);
+    // 清空输入框
+    ui->lineEditUserName->clear();
+    ui->lineEditPassWord->clear();
+}
+
+void MainWindow::switchToFunctionPage()
+{
+    // 切换到功能选择界面
+    stackedWidget->setCurrentWidget(functionPage);
+    
+    // 更新欢迎文本
+    QString welcomeText = "欢迎您，" + m_username;
+    ui->labelWelcome->setText(welcomeText);
+}
+
+void MainWindow::switchToUploadPage()
+{
+    // 切换到上传功能界面
+    stackedWidget->setCurrentWidget(uploadPage);
+    
+    // 清空上传列表
+    imageModel->removeRows(0, imageModel->rowCount());
+    imageList.clear();
+}
+
+void MainWindow::switchToCloudPage()
+{
+    // 切换到云端功能界面
+    stackedWidget->setCurrentWidget(cloudPage);
+    
+    // 刷新云端列表
+    cloudModel->removeRows(0, cloudModel->rowCount());
+    on_pushButtonFlush_clicked();
+}
+
+void MainWindow::switchToManagePage()
+{
+    // 切换到云端图片管理界面
+    stackedWidget->setCurrentWidget(managePage);
+    
+    // 刷新云端图片管理列表
+    manageModel->removeRows(0, manageModel->rowCount());
+    
+    // 构建HTTP GET请求报文获取图片列表
+    QString request = "GET /getlist?username=" + m_username + " HTTP/1.1\r\n"
+                      "Host: 192.168.234.128:8080\r\n\r\n";
+
+    //将请求报文字符串转换为QByteArray
+    QByteArray byteArray = request.toUtf8();
+
+    //转换为base64编码
+    QByteArray msg_base64 = byteArray.toBase64().constData();
+
+    //获取要发送数据大小
+    uint32_t size = msg_base64.size();
+    //转换为网络字节序
+    size = htonl(size);
+
+    //将size作为包头添加到发送数据前面
+    msg_base64.prepend(reinterpret_cast<const char*>(&size), sizeof(size));
+
+    //服务器消息处理
+    connect(m_tcpsocket, &QSslSocket::readyRead, this, &MainWindow::processManageList);
+
+    // 通过TCP发送数据
+    m_tcpsocket->write(msg_base64);
 }
 
 MainWindow::~MainWindow()
@@ -159,7 +386,6 @@ void MainWindow::on_pushButtonLogin_clicked()
 
     //发送消息
     m_tcpsocket->write(msg_base64);
-
 }
 
 //注册按钮
@@ -477,44 +703,6 @@ bool MainWindow::readMsg()
     return true;
 }
 
-//消息处理
-// void MainWindow::processMsg()
-// {
-//     QJsonObject root = readMsg();
-//     if(root.isEmpty())
-//     {
-//         QMessageBox::information(this, "", "数据解析为空");
-//     }
-
-//     //根据请求字段的值进行相应处理
-//     QString request = root["request"].toString();
-//     QJsonObject user = root;
-//     if(request == "login")
-//     {
-//         processLogin(user);
-//     }
-//     if(request == "register")
-//     {
-//         processRegister(user);
-//     }
-//     if(request == "upload")
-//     {
-//         processUpload(user);
-//     }
-//     if(request == "getlist")
-//     {
-//         processGetlist(user);
-//     }
-//     if(request == "download")
-//     {
-//         processDownload(user);
-//     }
-//     if(request == "delete")
-//     {
-//         processDelete(user);
-//     }
-// }
-
 //登录处理
 void MainWindow::processLogin()
 {
@@ -552,6 +740,9 @@ void MainWindow::processLogin()
         userLoginStatus[m_username.toStdString()] = true;   //更改登录状态
         cloudModel->removeRows(0,cloudModel->rowCount());   //清空云端列表
         QMessageBox::information(this, "login", "登录成功");
+        
+        // 登录成功后切换到功能选择界面
+        switchToFunctionPage();
     }
     if(statusCode == "403") //用户不存在或密码错误
     {
@@ -827,6 +1018,522 @@ bool MainWindow::isImageExists(const QString &fileName)
         }
     }
     return false;
+}
+
+// 功能选择界面按钮槽函数
+void MainWindow::on_pushButtonUploadFunction_clicked()
+{
+    // 切换到上传功能界面
+    switchToUploadPage();
+}
+
+void MainWindow::on_pushButtonCloudFunction_clicked()
+{
+    // 切换到云端功能界面
+    switchToCloudPage();
+}
+
+void MainWindow::on_pushButtonLogout_clicked()
+{
+    // 退出登录
+    if (!m_username.isEmpty()) {
+        // 清除登录状态
+        userLoginStatus.clear();
+        // 显示退出登录消息
+        QMessageBox::information(this, "提示", "已退出登录");
+        // 切换到登录界面
+        switchToLoginPage();
+    }
+}
+
+// 上传功能界面返回按钮
+void MainWindow::on_pushButtonBackFromUpload_clicked()
+{
+    // 切换回功能选择界面
+    switchToFunctionPage();
+}
+
+// 云端功能界面返回按钮
+void MainWindow::on_pushButtonBackFromCloud_clicked()
+{
+    // 切换回功能选择界面
+    switchToFunctionPage();
+}
+
+// 处理获取管理列表的响应
+void MainWindow::processManageList()
+{
+    //获取http响应消息
+    if(!readMsg())//数据不完整
+    {
+        return;
+    }
+
+    //断开信号和槽
+    disconnect(m_tcpsocket, &QSslSocket::readyRead, this, &MainWindow::processManageList);
+
+    int headerEndIndex = response.indexOf("\r\n\r\n");
+    //获取状态行
+    QByteArray statusLine = response.left(headerEndIndex);
+
+    //获取响应体
+    QByteArray jsonBody = response.mid(headerEndIndex + 4);
+
+    //将状态行的各个部分存储到列表中
+    QStringList parts = QString::fromUtf8(statusLine).split(" ");
+
+    //提取状态码
+    QString statusCode = parts.at(1);
+
+    //将响应体转换为json对象
+    QJsonDocument doc = QJsonDocument::fromJson(jsonBody);
+    QJsonObject user = doc.object();
+    if(statusCode == "200")//获取列表成功
+    {
+        QJsonArray list = user["list"].toArray();
+        if(list.isEmpty()) {
+            QMessageBox::information(this, "提示", "您的云端图片库为空");
+        } else {
+            // 创建进度对话框
+            QProgressDialog progress("正在加载缩略图...", "取消", 0, list.size(), this);
+            progress.setWindowModality(Qt::WindowModal);
+            progress.setMinimumDuration(500); // 只有操作超过500ms才显示进度对话框
+            
+            for(int i = 0; i < list.size(); i++)
+            {
+                progress.setValue(i);
+                if (progress.wasCanceled())
+                    break;
+                    
+                // 创建一个标准项用于在ListView中显示图片名称
+                QString imageName = list[i].toString();
+                QStandardItem *item = new QStandardItem(imageName);
+                
+                // 下载图片并生成缩略图
+                downloadThumbnail(imageName, item);
+                
+                // 添加工具提示，方便用户查看完整文件名
+                item->setToolTip(imageName);
+                
+                // 添加到模型
+                manageModel->appendRow(item);
+                
+                // 处理一下其他事件，保持界面响应
+                QApplication::processEvents();
+            }
+            
+            progress.setValue(list.size());
+        }
+    }
+    else if(statusCode == "500")//获取列表失败
+    {
+        QString msg = user["msg"].toString();
+        QMessageBox::warning(this, "获取图片列表失败", msg);
+    }
+}
+
+// 下载图片并生成缩略图
+void MainWindow::downloadThumbnail(const QString &imageName, QStandardItem *item)
+{
+    // 先设置一个默认图标，以防下载失败
+    QPixmap defaultIcon(":/new/prefix1/icon.png");
+    if(defaultIcon.isNull()) {
+        QPixmap pixmap(24, 24);
+        pixmap.fill(QColor(100, 149, 237)); // 蓝色
+        item->setData(pixmap, Qt::DecorationRole);
+    } else {
+        item->setData(defaultIcon.scaled(24, 24), Qt::DecorationRole);
+    }
+    
+    // 创建一个新的套接字用于下载缩略图，避免干扰主套接字
+    QSslSocket *thumbnailSocket = new QSslSocket(this);
+    
+    // 加载并信任CA证书
+    QFile certFile("C:\\Users\\administered\\Desktop\\client\\ca.crt");
+    if (certFile.open(QIODevice::ReadOnly)) {
+        QSslCertificate cert(&certFile, QSsl::Pem);
+        QList<QSslCertificate> certs;
+        certs.append(cert);
+
+        QSslConfiguration sslConfig = thumbnailSocket->sslConfiguration();
+        sslConfig.setCaCertificates(certs);
+        thumbnailSocket->setSslConfiguration(sslConfig);
+        certFile.close();
+    }
+    
+    // 设置验证模式
+    thumbnailSocket->setPeerVerifyMode(QSslSocket::VerifyPeer);
+    
+    // 连接服务器
+    thumbnailSocket->connectToHostEncrypted("192.168.234.128", 8080);
+    if(!thumbnailSocket->waitForEncrypted(1000)) {
+        delete thumbnailSocket;
+        return;
+    }
+    
+    // 构建HTTP GET请求报文
+    QString request = "GET /download?username=" + m_username + "&imagename=" + imageName + " HTTP/1.1\r\n"
+                      "Host: 192.168.234.128:8080\r\n\r\n";
+                      
+    // 将请求报文字符串转换为QByteArray
+    QByteArray byteArray = request.toUtf8();
+    
+    // 转换为base64编码
+    QByteArray msg_base64 = byteArray.toBase64();
+    
+    // 获取要发送数据大小
+    uint32_t size = msg_base64.size();
+    // 转换为网络字节序
+    size = htonl(size);
+    
+    // 将size作为包头添加到发送数据前面
+    msg_base64.prepend(reinterpret_cast<const char*>(&size), sizeof(size));
+    
+    // 发送请求
+    thumbnailSocket->write(msg_base64);
+    
+    // 等待响应
+    if (!thumbnailSocket->waitForReadyRead(3000)) {
+        delete thumbnailSocket;
+        return;
+    }
+    
+    // 读取响应
+    QByteArray response;
+    while (thumbnailSocket->bytesAvailable() || thumbnailSocket->waitForReadyRead(100)) {
+        response.append(thumbnailSocket->readAll());
+        
+        // 读取包头
+        if (response.size() < 4) continue;
+        
+        uint32_t msglen;
+        memcpy(&msglen, response.data(), 4);
+        msglen = ntohl(msglen);
+        
+        // 如果数据不完整，继续读取
+        if (response.size() < msglen + 4) continue;
+        
+        // 丢弃掉头部4字节数据
+        response = response.mid(4);
+        
+        // base64解码
+        response = QByteArray::fromBase64(response);
+        break;
+    }
+    
+    // 解析HTTP响应
+    int headerEndIndex = response.indexOf("\r\n\r\n");
+    if (headerEndIndex == -1) {
+        delete thumbnailSocket;
+        return;
+    }
+    
+    // 获取状态行
+    QByteArray statusLine = response.left(response.indexOf("\r\n"));
+    
+    // 获取响应体
+    QByteArray jsonBody = response.mid(headerEndIndex + 4);
+    
+    // 将状态行的各个部分存储到列表中
+    QStringList parts = QString::fromUtf8(statusLine).split(" ");
+    
+    // 提取状态码
+    if (parts.size() < 2) {
+        delete thumbnailSocket;
+        return;
+    }
+    
+    QString statusCode = parts.at(1);
+    
+    if (statusCode == "200") {
+        // 将响应体转换为json对象
+        QJsonDocument doc = QJsonDocument::fromJson(jsonBody);
+        QJsonObject user = doc.object();
+        
+        // base64解码
+        QByteArray decode_data = QByteArray::fromBase64(user["imagedata"].toString().toUtf8());
+        
+        // AES128解密
+        QByteArray key ("1234567812345678");
+        QAESEncryption aesEnctyption(QAESEncryption::AES_128, QAESEncryption::CBC);
+        QByteArray imagedata = aesEnctyption.decode(decode_data, key, key);
+        
+        // 加载图片
+        QImage image;
+        if (image.loadFromData(imagedata)) {
+            // 生成缩略图并设置到列表项
+            QPixmap pixmap = QPixmap::fromImage(image);
+            item->setData(pixmap.scaled(48, 48, Qt::KeepAspectRatio, Qt::SmoothTransformation), Qt::DecorationRole);
+        }
+    }
+    
+    // 断开连接并清理
+    thumbnailSocket->disconnectFromHost();
+    thumbnailSocket->deleteLater();
+}
+
+// 下载按钮点击事件
+void MainWindow::on_pushButtonDownload_clicked()
+{
+    //检查是否处于登录状态
+    if(userLoginStatus.empty())
+    {
+        QMessageBox::information(this,"提示", "未登录，请登录后再进行操作。");
+        return;
+    }
+    
+    // 获取选中的图片
+    QModelIndex index = ui->listViewManage->currentIndex();
+    if(!index.isValid()) {
+        QMessageBox::information(this, "提示", "请先选择要下载的图片");
+        return;
+    }
+    
+    // 获取图片名称
+    QString imagename = manageModel->data(index, Qt::DisplayRole).toString();
+    
+    // 选择保存路径
+    QString savePath = QFileDialog::getSaveFileName(this, "保存图片", 
+                                                   QDir::homePath() + "/" + imagename, 
+                                                   "图片文件(*.png *.jpg *.jpeg)");
+    if(savePath.isEmpty()) {
+        return; // 用户取消了保存
+    }
+    
+    // 请求下载图片
+    QString request = "GET /download?username=" + m_username + "&imagename=" + imagename + " HTTP/1.1\r\n"
+                      "Host: 192.168.234.128:8080\r\n\r\n";
+                      
+    //将请求报文字符串转换为QByteArray
+    QByteArray byteArray = request.toUtf8();
+    
+    //转换为base64编码
+    QByteArray msg_base64 = byteArray.toBase64().constData();
+    
+    //获取要发送数据大小
+    uint32_t size = msg_base64.size();
+    //转换为网络字节序
+    size = htonl(size);
+    
+    //将size作为包头添加到发送数据前面
+    msg_base64.prepend(reinterpret_cast<const char*>(&size), sizeof(size));
+    
+    // 保存路径，供下载完成后使用
+    m_savePath = savePath;
+    
+    //服务器消息处理
+    connect(m_tcpsocket, &QSslSocket::readyRead, this, &MainWindow::processManageDownload);
+    
+    // 通过TCP发送数据
+    m_tcpsocket->write(msg_base64);
+}
+
+// 处理下载响应
+void MainWindow::processManageDownload()
+{
+    //获取http响应消息
+    if(!readMsg())//数据不完整
+    {
+        return;
+    }
+    
+    //断开信号和槽
+    disconnect(m_tcpsocket, &QSslSocket::readyRead, this, &MainWindow::processManageDownload);
+    
+    int headerEndIndex = response.indexOf("\r\n\r\n");
+    //获取状态行
+    QByteArray statusLine = response.left(headerEndIndex);
+    
+    //获取响应体
+    QByteArray jsonBody = response.mid(headerEndIndex + 4);
+    
+    //将状态行的各个部分存储到列表中
+    QStringList parts = QString::fromUtf8(statusLine).split(" ");
+    
+    //提取状态码
+    QString statusCode = parts.at(1);
+    
+    //将响应体转换为json对象
+    QJsonDocument doc = QJsonDocument::fromJson(jsonBody);
+    QJsonObject user = doc.object();
+    QString msg = user["msg"].toString();
+    
+    if(statusCode == "200") // 下载成功
+    {
+        //base64解码
+        QByteArray decode_data = QByteArray::fromBase64(user["imagedata"].toString().toUtf8());
+        
+        // AES128解密
+        QByteArray key ("1234567812345678");
+        QAESEncryption aesEnctyption(QAESEncryption::AES_128, QAESEncryption::CBC);
+        QByteArray imagedata = aesEnctyption.decode(decode_data, key, key);
+        
+        // 保存图片到用户选择的路径
+        QFile file(m_savePath);
+        if(file.open(QIODevice::WriteOnly))
+        {
+            file.write(imagedata);
+            file.close();
+            QMessageBox::information(this, "下载成功", "图片已成功保存到:\n" + m_savePath);
+        }
+        else
+        {
+            QMessageBox::critical(this, "下载失败", "无法保存图片，请检查路径权限");
+        }
+    }
+    else if(statusCode == "403") // 图片不存在
+    {
+        QMessageBox::information(this, "下载", msg);
+    }
+    else if(statusCode == "500") // 其他错误
+    {
+        QMessageBox::information(this, "下载", msg);
+    }
+}
+
+// 删除按钮点击事件
+void MainWindow::on_pushButtonDelete_clicked()
+{
+    //检查是否处于登录状态
+    if(userLoginStatus.empty())
+    {
+        QMessageBox::information(this,"提示", "未登录，请登录后再进行操作。");
+        return;
+    }
+    
+    // 获取选中的图片
+    QModelIndex index = ui->listViewManage->currentIndex();
+    if(!index.isValid()) {
+        QMessageBox::information(this, "提示", "请先选择要删除的图片");
+        return;
+    }
+    
+    // 获取图片名称
+    QString imagename = manageModel->data(index, Qt::DisplayRole).toString();
+    
+    // 确认删除
+    QMessageBox::StandardButton reply;
+    reply = QMessageBox::question(this, "确认删除", "确定要删除图片 " + imagename + " 吗？",
+                                  QMessageBox::Yes|QMessageBox::No);
+    if(reply == QMessageBox::No) {
+        return;
+    }
+    
+    // 发送删除请求
+    QString request = "DELETE /delete?username=" + m_username + "&imagename=" + imagename + " HTTP/1.1\r\n"
+                      "Host: 192.168.234.128:8080\r\n\r\n";
+                      
+    //将请求报文字符串转换为QByteArray
+    QByteArray byteArray = request.toUtf8();
+    
+    //转换为base64编码
+    QByteArray msg_base64 = byteArray.toBase64().constData();
+    
+    //获取要发送数据大小
+    uint32_t size = msg_base64.size();
+    //转换为网络字节序
+    size = htonl(size);
+    
+    //将size作为包头添加到发送数据前面
+    msg_base64.prepend(reinterpret_cast<const char*>(&size), sizeof(size));
+    
+    //服务器消息处理
+    connect(m_tcpsocket, &QSslSocket::readyRead, this, &MainWindow::processManageDelete);
+    
+    // 通过TCP发送数据
+    m_tcpsocket->write(msg_base64);
+}
+
+// 处理删除响应
+void MainWindow::processManageDelete()
+{
+    //获取http响应消息
+    if(!readMsg())//数据不完整
+    {
+        return;
+    }
+    
+    //断开信号和槽
+    disconnect(m_tcpsocket, &QSslSocket::readyRead, this, &MainWindow::processManageDelete);
+    
+    int headerEndIndex = response.indexOf("\r\n\r\n");
+    //获取状态行
+    QByteArray statusLine = response.left(headerEndIndex);
+    
+    //获取响应体
+    QByteArray jsonBody = response.mid(headerEndIndex + 4);
+    
+    //将状态行的各个部分存储到列表中
+    QStringList parts = QString::fromUtf8(statusLine).split(" ");
+    
+    //提取状态码
+    QString statusCode = parts.at(1);
+    
+    //将响应体转换为json对象
+    QJsonDocument doc = QJsonDocument::fromJson(jsonBody);
+    QJsonObject user = doc.object();
+    QString msg = user["msg"].toString();
+    
+    if(statusCode == "200") // 删除成功
+    {
+        // 清空云端管理列表
+        manageModel->removeRows(0, manageModel->rowCount());
+        
+        // 更新列表
+        QJsonArray list = user["list"].toArray();
+        for(int i = 0; i < list.size(); i++)
+        {
+            // 创建一个标准项用于在ListView中显示图片名称
+            QString imageName = list[i].toString();
+            QStandardItem *item = new QStandardItem(imageName);
+            
+            // 添加缩略图
+            QPixmap defaultIcon(":/new/prefix1/icon.png");
+            if(defaultIcon.isNull()) {
+                // 如果没有图标资源，创建一个简单的彩色方块作为缩略图
+                QPixmap pixmap(24, 24);
+                pixmap.fill(QColor(100, 149, 237)); // 蓝色
+                item->setData(pixmap, Qt::DecorationRole);
+            } else {
+                item->setData(defaultIcon.scaled(24, 24), Qt::DecorationRole);
+            }
+            
+            // 添加工具提示
+            item->setToolTip(imageName);
+            
+            manageModel->appendRow(item);
+        }
+        
+        QMessageBox::information(this, "删除", "图片已成功删除");
+    }
+    else if(statusCode == "403") // 图片不存在
+    {
+        QMessageBox::information(this, "删除", msg);
+    }
+    else if(statusCode == "500") // 其他错误
+    {
+        QMessageBox::information(this, "删除", msg);
+    }
+}
+
+// 分享按钮点击事件 (功能暂未实现)
+void MainWindow::on_pushButtonShare_clicked()
+{
+    QMessageBox::information(this, "功能暂未实现", "分享功能暂未实现");
+}
+
+// 返回按钮点击事件
+void MainWindow::on_pushButtonBackFromManage_clicked()
+{
+    // 切换回功能选择界面
+    switchToFunctionPage();
+}
+
+// 管理功能按钮点击事件
+void MainWindow::on_pushButtonManageFunction_clicked()
+{
+    // 切换到云端图片管理界面
+    switchToManagePage();
 }
 
 

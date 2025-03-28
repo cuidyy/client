@@ -2,35 +2,23 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <QString>
-#include <QJsonArray>
+#include <QtWidgets>
+#include <QStringList>
+#include <QFileDialog>
+#include <QCryptographicHash>
 #include <QJsonObject>
 #include <QJsonDocument>
-#include <QDialog>
+#include <QJsonArray>
+#include <QByteArray>
 #include <QMessageBox>
-#include <QDebug>
-#include <QCryptographicHash>
-#include <QTcpSocket>
-#include <winsock2.h>
-#include <windows.h>
-#include <QObject>
-#include <QFileDialog>
-#include <QStandardItemModel>
-#include <iostream>
-#include <fstream>
-#include <map>
-#include <QGraphicsScene>
-#include <QGraphicsView>
-#include <QImage>
 #include <QSslSocket>
 #include <QSslConfiguration>
 #include "qaesencryption.h"
-using namespace std;
+#include <map>
+#include <string>
 
 QT_BEGIN_NAMESPACE
-namespace Ui {
-class MainWindow;
-}
+namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
 
 class MainWindow : public QMainWindow
@@ -41,53 +29,81 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
-
 private slots:
-    void on_pushButtonLogin_clicked();      //登录按钮
-
-    void on_pushButtonRegister_clicked();   //注册按钮
-
-    void on_pushButtonSelectFile_clicked(); //选择本地文件按钮
-
-    void on_pushButtonUpload_clicked();     //上传按钮
-
-    void on_pushButtonFlush_clicked();      //刷新按钮
-
-    void on_ListViewCloudDoubleClicked(const QModelIndex &index);//双击下载图片
-
+    void on_pushButtonLogin_clicked();
+    void on_pushButtonRegister_clicked();
+    void on_pushButtonSelectFile_clicked();
+    void on_pushButtonUpload_clicked();
+    void on_pushButtonFlush_clicked();
+    void on_ListViewCloudDoubleClicked(const QModelIndex &index);
     void on_ListViewCloudRightClicked(const QPoint &index);
 
-    //void processMsg();                      //处理消息
-private:
-    QJsonObject getInput();     //获取输入值
-
-    bool readMsg();      //读取消息
-
-    void processLogin();    //回复登录消息
-
-    void processRegister(); //回复注册消息
-
-    void processUpload();   //回复上传消息
-
-    void processGetlist();  //处理获得图片列表消息
-
-    void processDownload(); //处理图片下载消息
-
-    void processDelete();   //处理图片删除消息
-
-    bool isImageExists(const QString &fileName); //判断图片是否已在图片列表
+    void on_pushButtonUploadFunction_clicked();
+    void on_pushButtonCloudFunction_clicked();
+    void on_pushButtonLogout_clicked();
+    void on_pushButtonBackFromUpload_clicked();
+    void on_pushButtonBackFromCloud_clicked();
+    
+    // 新增的云端图片管理相关槽函数
+    void on_pushButtonManageFunction_clicked();
+    void on_pushButtonBackFromManage_clicked();
+    void on_pushButtonDownload_clicked();
+    void on_pushButtonDelete_clicked();
+    void on_pushButtonShare_clicked();
 
 private:
     Ui::MainWindow *ui;
-    QSslSocket *m_tcpsocket;//客户端套接字类
-    map<string, bool> userLoginStatus; //判断用户登录状态
-    QString m_username; //用户名
-    QByteArray response; //存储服务器回复的消息
-    QStandardItemModel *imageModel;//QStandardItemModel 对象,用于管理要在上传列表中展示的数据
-    QList<QString> imageList;//图片列表
-    int image_count = 0;//记录要上传的图片数量
-    QStandardItemModel *cloudModel;//管理云端列表
-    QGraphicsScene *graphicsScene;//用于管理图形项,在这里用于展示图片
-    QGraphicsView *graphicsView;//是用于在窗口中查看 QGraphicsScene 内容的视图类
+
+    // 界面切换相关
+    QStackedWidget *stackedWidget;
+    QWidget *loginPage;
+    QWidget *functionPage;
+    QWidget *uploadPage;
+    QWidget *cloudPage;
+    QWidget *managePage; // 新增的云端图片管理页面
+
+    void switchToLoginPage();
+    void switchToFunctionPage();
+    void switchToUploadPage();
+    void switchToCloudPage();
+    void switchToManagePage(); // 新增的切换到云端图片管理页面的方法
+
+    // 客户端TCP连接
+    QSslSocket *m_tcpsocket;
+
+    // 用户数据相关
+    QJsonObject getInput();
+    QStringList imageList;
+    QString m_username;
+    QString m_savePath; // 保存下载图片的路径
+    std::map<std::string, bool> userLoginStatus;
+
+    // 数据模型
+    QStandardItemModel *imageModel;
+    QStandardItemModel *cloudModel;
+    QStandardItemModel *manageModel; // 新增的云端图片管理列表模型
+
+    // 图片相关
+    QGraphicsScene *graphicsScene;
+    QGraphicsView *graphicsView;
+    bool isImageExists(const QString &fileName);
+    void downloadThumbnail(const QString &imageName, QStandardItem *item); // 下载并生成缩略图
+
+    // 响应消息处理
+    QByteArray response;
+    bool readMsg();
+    void processLogin();
+    void processRegister();
+    void processUpload();
+    void processGetlist();
+    void processDownload();
+    void processDelete();
+    
+    // 新增的云端图片管理相关处理方法
+    void processManageList(); // 获取管理列表
+    void processManageDownload(); // 处理下载操作
+    void processManageDelete(); // 处理删除操作
+
+    int image_count = 0;
 };
 #endif // MAINWINDOW_H
