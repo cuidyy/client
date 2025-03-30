@@ -16,6 +16,8 @@
 #include "qaesencryption.h"
 #include <map>
 #include <string>
+#include <QMap>
+#include <QPixmap>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -88,6 +90,7 @@ private:
     QGraphicsView *graphicsView;
     bool isImageExists(const QString &fileName);
     void downloadThumbnail(const QString &imageName, QStandardItem *item); // 下载并生成缩略图
+    QByteArray decodeImageData(const QByteArray &encodedData); // 解码图片数据
 
     // 响应消息处理
     QByteArray response;
@@ -105,5 +108,8 @@ private:
     void processManageDelete(); // 处理删除操作
 
     int image_count = 0;
+
+    QMap<QString, QPixmap> thumbnailCache; // 添加缩略图缓存
+    QMap<QString, QByteArray> imageDataCache; // 存储解码后的完整图片数据缓存
 };
 #endif // MAINWINDOW_H

@@ -1,6 +1,11 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include <QMainWindow>
+#include <QtConcurrent/QtConcurrent>
+#include <QMetaObject>
+#include <QFuture>
+#include <QThread>
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -19,7 +24,7 @@ MainWindow::MainWindow(QWidget *parent)
     m_tcpsocket = new QSslSocket(this);
 
     // 加载并信任CA证书
-    QFile certFile("C:\\Users\\administered\\Desktop\\client\\ca.crt");
+    QFile certFile("C:\\Users\\Citrus\\Desktop\\project\\client\\ca.crt");
     if (certFile.open(QIODevice::ReadOnly)) {
         QSslCertificate cert(&certFile, QSsl::Pem);
         QList<QSslCertificate> certs;
@@ -36,7 +41,7 @@ MainWindow::MainWindow(QWidget *parent)
     m_tcpsocket->setPeerVerifyMode(QSslSocket::VerifyPeer);
     //连接服务器
     if(m_tcpsocket->state() != QSslSocket::ConnectedState) {
-        m_tcpsocket->connectToHostEncrypted("192.168.234.128", 8080);
+        m_tcpsocket->connectToHostEncrypted("127.0.0.1", 8080);
         //连接超时
         if(!m_tcpsocket->waitForEncrypted(1000)) {
             QMessageBox::information(this, "", "连接服务器超时");
@@ -239,6 +244,11 @@ void MainWindow::switchToLoginPage()
     // 清空输入框
     ui->lineEditUserName->clear();
     ui->lineEditPassWord->clear();
+    
+    // 清空缩略图缓存
+    thumbnailCache.clear();
+    // 清空图片数据缓存
+    imageDataCache.clear();
 }
 
 void MainWindow::switchToFunctionPage()
@@ -281,7 +291,7 @@ void MainWindow::switchToManagePage()
     
     // 构建HTTP GET请求报文获取图片列表
     QString request = "GET /getlist?username=" + m_username + " HTTP/1.1\r\n"
-                      "Host: 192.168.234.128:8080\r\n\r\n";
+                      "Host: 127.0.0.1:8080\r\n\r\n";
 
     //将请求报文字符串转换为QByteArray
     QByteArray byteArray = request.toUtf8();
@@ -362,7 +372,7 @@ void MainWindow::on_pushButtonLogin_clicked()
 
     // 构建HTTP请求报文
     QString request = "POST /login HTTP/1.1\r\n"
-                      "Host: 192.168.234.128:8080\r\n\r\n";
+                      "Host: 127.0.0.1:8080\r\n\r\n";
 
     //添加请求体
     request += requestBody;
@@ -418,7 +428,7 @@ void MainWindow::on_pushButtonRegister_clicked()
 
     // 构建HTTP请求报文
     QString request = "POST /register HTTP/1.1\r\n"
-                      "Host: 192.168.234.128:8080\r\n\r\n";
+                      "Host: 127.0.0.1:8080\r\n\r\n";
 
     //添加请求体
     request += requestBody;
@@ -539,7 +549,7 @@ void MainWindow::on_pushButtonUpload_clicked()
 
             // 构建HTTP请求报文
             QString request = "POST /upload HTTP/1.1\r\n"
-                              "Host: 192.168.234.128:8080\r\n\r\n";
+                              "Host: 127.0.0.1:8080\r\n\r\n";
 
             //添加请求体
             request += requestBody;
@@ -583,7 +593,7 @@ void MainWindow::on_pushButtonFlush_clicked()
 
     // 构建HTTP GET请求报文
     QString request = "GET /getlist?username=" + m_username + " HTTP/1.1\r\n"
-                      "Host: 192.168.234.128:8080\r\n\r\n";
+                      "Host: 127.0.0.1:8080\r\n\r\n";
 
     //将请求报文字符串转换为QByteArray
     QByteArray byteArray = request.toUtf8();
@@ -609,28 +619,47 @@ void MainWindow::on_pushButtonFlush_clicked()
 //双击图片名并下载图片
 void MainWindow::on_ListViewCloudDoubleClicked(const QModelIndex &index)
 {
-    //获取图片名
+    // 获取图片名
     QString imagename = cloudModel->data(index, Qt::DisplayRole).toString();
-
+    
+    // 先检查缓存中是否有此图片数据
+    if (imageDataCache.contains(imagename)) {
+        // 从缓存中获取已解码的图片数据
+        QByteArray imagedata = imageDataCache[imagename];
+        
+        // 显示图片
+        QImage image;
+        if (image.loadFromData(imagedata)) {
+            // 在图形场景中显示图片
+            graphicsScene->clear();
+            graphicsScene->addPixmap(QPixmap::fromImage(image));
+            graphicsView->setSceneRect(image.rect());
+            graphicsView->setWindowTitle(imagename);
+            graphicsView->show();
+            return; // 直接返回，不需要从服务器下载
+        }
+    }
+    
+    // 缓存中没有或加载失败，从服务器下载
     // 构建HTTP GET请求报文
     QString request = "GET /download?username=" + m_username + "&imagename=" + imagename + " HTTP/1.1\r\n"
-                        "Host: 192.168.234.128:8080\r\n\r\n";
+                       "Host: 127.0.0.1:8080\r\n\r\n";
 
-    //将请求报文字符串转换为QByteArray
+    // 将请求报文字符串转换为QByteArray
     QByteArray byteArray = request.toUtf8();
 
-    //转换为base64编码
+    // 转换为base64编码
     QByteArray msg_base64 = byteArray.toBase64().constData();
 
-    //获取要发送数据大小
+    // 获取要发送数据大小
     uint32_t size = msg_base64.size();
-    //转换为网络字节序
+    // 转换为网络字节序
     size = htonl(size);
 
-    //将size作为包头添加到发送数据前面
+    // 将size作为包头添加到发送数据前面
     msg_base64.prepend(reinterpret_cast<const char*>(&size), sizeof(size));
 
-    //服务器消息处理
+    // 服务器消息处理
     connect(m_tcpsocket, &QSslSocket::readyRead, this, &MainWindow::processDownload);
 
     // 通过TCP发送数据
@@ -646,7 +675,7 @@ void MainWindow::on_ListViewCloudRightClicked(const QPoint &index)
 
     // 构建HTTP GET请求报文
     QString request = "DELETE /delete?username=" + m_username + "&imagename=" + imagename + " HTTP/1.1\r\n"
-                                                                                           "Host: 192.168.234.128:8080\r\n\r\n";
+                                                                                           "Host: 127.0.0.1:8080\r\n\r\n";
 
     //将请求报文字符串转换为QByteArray
     QByteArray byteArray = request.toUtf8();
@@ -873,19 +902,275 @@ void MainWindow::processGetlist()
     if(statusCode == "200")//获取列表成功
     {
         QJsonArray list = user["list"].toArray();
-        for(int i = 0; i < list.size(); i++)
-        {
-            // 创建一个标准项用于在ListView中显示图片名称
-            QStandardItem *item = new QStandardItem(list[i].toString());//获取图片名
+        if(list.isEmpty()) {
+            QMessageBox::information(this, "提示", "您的云端图片库为空");
+            return;
+        }
+
+        // 先显示文件名列表
+        for(int i = 0; i < list.size(); i++) {
+            QString imageName = list[i].toString();
+            QStandardItem *item = new QStandardItem(imageName);
+            
+            // 设置默认图标
+            QPixmap defaultIcon(":/new/prefix1/icon.png");
+            if(defaultIcon.isNull()) {
+                QPixmap pixmap(48, 48);
+                pixmap.fill(QColor(100, 149, 237)); // 蓝色
+                item->setData(pixmap, Qt::DecorationRole);
+            } else {
+                item->setData(defaultIcon.scaled(48, 48), Qt::DecorationRole);
+            }
+            
+            item->setToolTip(imageName);
             cloudModel->appendRow(item);
+            
+            // 先检查缓存中是否有此图片的缩略图
+            if (thumbnailCache.contains(imageName)) {
+                item->setData(thumbnailCache[imageName], Qt::DecorationRole);
+            } else {
+                // 只有在缓存中没有时，才创建线程去下载
+                QFuture<void> future = QtConcurrent::run([=]() {
+                    this->downloadThumbnail(imageName, item);
+                });
+            }
         }
     }
-    if(statusCode == "500")//获取列表失败
+    else if(statusCode == "500")//获取列表失败
     {
         QString msg = user["msg"].toString();
-        QMessageBox::information(this, "getlist", msg);
+        QMessageBox::warning(this, "获取图片列表失败", msg);
     }
+}
 
+// 下载图片并生成缩略图
+void MainWindow::downloadThumbnail(const QString &imageName, QStandardItem *item)
+{
+    // 创建一个新的套接字用于下载缩略图
+    QSslSocket thumbnailSocket;
+    
+    // 记录重试次数
+    int retryCount = 0;
+    const int maxRetries = 3;
+    
+    while (retryCount < maxRetries) {
+        // 设置验证模式
+        thumbnailSocket.setPeerVerifyMode(QSslSocket::VerifyNone);
+        
+        // 设置超时
+        thumbnailSocket.setSocketOption(QAbstractSocket::LowDelayOption, 1);
+        
+        // 连接服务器
+        thumbnailSocket.connectToHostEncrypted("127.0.0.1", 8080);
+        if(!thumbnailSocket.waitForEncrypted(3000)) { // 增加超时时间
+            qDebug() << "Connection timeout for image:" << imageName << "Error:" << thumbnailSocket.errorString();
+            retryCount++;
+            thumbnailSocket.abort();
+            QThread::msleep(100 * retryCount); // 延迟一段时间后重试
+            continue;
+        }
+        
+        // 构建HTTP GET请求报文
+        QString request = "GET /download?username=" + m_username + "&imagename=" + imageName + " HTTP/1.1\r\n"
+                        "Host: 127.0.0.1:8080\r\n\r\n";
+                        
+        // 将请求报文字符串转换为QByteArray
+        QByteArray byteArray = request.toUtf8();
+        
+        // 转换为base64编码
+        QByteArray msg_base64 = byteArray.toBase64();
+        
+        // 获取要发送数据大小
+        uint32_t size = msg_base64.size();
+        // 转换为网络字节序
+        size = htonl(size);
+        
+        // 将size作为包头添加到发送数据前面
+        msg_base64.prepend(reinterpret_cast<const char*>(&size), sizeof(size));
+        
+        // 发送请求
+        qint64 bytesWritten = thumbnailSocket.write(msg_base64);
+        if (bytesWritten != msg_base64.size()) {
+            qDebug() << "Failed to write all data for image:" << imageName;
+            retryCount++;
+            thumbnailSocket.abort();
+            QThread::msleep(100 * retryCount); // 延迟一段时间后重试
+            continue;
+        }
+        
+        // 确保所有数据已发送
+        if (!thumbnailSocket.waitForBytesWritten(3000)) {
+            qDebug() << "Failed to write data for image:" << imageName << "Error:" << thumbnailSocket.errorString();
+            retryCount++;
+            thumbnailSocket.abort();
+            QThread::msleep(100 * retryCount); // 延迟一段时间后重试
+            continue;
+        }
+        
+        // 等待响应
+        if (!thumbnailSocket.waitForReadyRead(5000)) { // 增加超时时间
+            qDebug() << "Response timeout for image:" << imageName << "Error:" << thumbnailSocket.errorString();
+            retryCount++;
+            thumbnailSocket.abort();
+            QThread::msleep(100 * retryCount); // 延迟一段时间后重试
+            continue;
+        }
+        
+        // 读取响应
+        QByteArray response;
+        bool readComplete = false;
+        int readAttempts = 0;
+        const int maxReadAttempts = 10;
+        
+        while (!readComplete && readAttempts < maxReadAttempts) {
+            if (thumbnailSocket.bytesAvailable() > 0) {
+                response.append(thumbnailSocket.readAll());
+            } else if (!thumbnailSocket.waitForReadyRead(1000)) {
+                readAttempts++;
+                continue;
+            } else {
+                response.append(thumbnailSocket.readAll());
+            }
+            
+            // 读取包头
+            if (response.size() < 4) continue;
+            
+            uint32_t msglen;
+            memcpy(&msglen, response.data(), 4);
+            msglen = ntohl(msglen);
+            
+            // 如果数据不完整，继续读取
+            if (response.size() < msglen + 4) continue;
+            
+            // 丢弃掉头部4字节数据
+            response = response.mid(4);
+            
+            // base64解码
+            response = QByteArray::fromBase64(response);
+            readComplete = true;
+            break;
+        }
+        
+        if (!readComplete) {
+            qDebug() << "Failed to read complete data for image:" << imageName;
+            retryCount++;
+            thumbnailSocket.abort();
+            QThread::msleep(100 * retryCount); // 延迟一段时间后重试
+            continue;
+        }
+        
+        // 解析HTTP响应
+        int headerEndIndex = response.indexOf("\r\n\r\n");
+        if (headerEndIndex == -1) {
+            qDebug() << "Invalid HTTP response for image:" << imageName;
+            retryCount++;
+            thumbnailSocket.abort();
+            QThread::msleep(100 * retryCount); // 延迟一段时间后重试
+            continue;
+        }
+        
+        // 获取状态行
+        QByteArray statusLine = response.left(response.indexOf("\r\n"));
+        
+        // 获取响应体
+        QByteArray jsonBody = response.mid(headerEndIndex + 4);
+        
+        // 将状态行的各个部分存储到列表中
+        QStringList parts = QString::fromUtf8(statusLine).split(" ");
+        
+        // 提取状态码
+        if (parts.size() < 2) {
+            qDebug() << "Invalid status line for image:" << imageName;
+            retryCount++;
+            thumbnailSocket.abort();
+            QThread::msleep(100 * retryCount); // 延迟一段时间后重试
+            continue;
+        }
+        
+        QString statusCode = parts.at(1);
+        
+        if (statusCode == "200") {
+            // 将响应体转换为json对象
+            QJsonDocument doc = QJsonDocument::fromJson(jsonBody);
+            if (doc.isNull()) {
+                qDebug() << "Invalid JSON response for image:" << imageName;
+                retryCount++;
+                thumbnailSocket.abort();
+                QThread::msleep(100 * retryCount); // 延迟一段时间后重试
+                continue;
+            }
+            
+            QJsonObject user = doc.object();
+            
+            // base64解码
+            QByteArray decode_data = QByteArray::fromBase64(user["imagedata"].toString().toUtf8());
+            if (decode_data.isEmpty()) {
+                qDebug() << "Empty image data for image:" << imageName;
+                retryCount++;
+                thumbnailSocket.abort();
+                QThread::msleep(100 * retryCount); // 延迟一段时间后重试
+                continue;
+            }
+            
+            // AES128解密
+            QByteArray key ("1234567812345678");
+            QAESEncryption aesEnctyption(QAESEncryption::AES_128, QAESEncryption::CBC);
+            QByteArray imagedata = aesEnctyption.decode(decode_data, key, key);
+            if (imagedata.isEmpty()) {
+                qDebug() << "Failed to decrypt image data for image:" << imageName;
+                retryCount++;
+                thumbnailSocket.abort();
+                QThread::msleep(100 * retryCount); // 延迟一段时间后重试
+                continue;
+            }
+            
+            // 将解码后的图片数据保存到缓存
+            QMetaObject::invokeMethod(this, [this, imageName, imagedata]() {
+                if (!imageDataCache.contains(imageName)) {
+                    imageDataCache[imageName] = imagedata;
+                }
+            }, Qt::QueuedConnection);
+            
+            // 加载图片
+            QImage image;
+            if (image.loadFromData(imagedata)) {
+                // 生成缩略图并设置到列表项
+                QPixmap pixmap = QPixmap::fromImage(image);
+                QPixmap thumbnail = pixmap.scaled(48, 48, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+                
+                // 保存到缓存
+                thumbnailCache[imageName] = thumbnail;
+                
+                // 使用主线程更新UI
+                QMetaObject::invokeMethod(this, [this, item, thumbnail]() {
+                    item->setData(thumbnail, Qt::DecorationRole);
+                }, Qt::QueuedConnection);
+                
+                // 成功处理，退出循环
+                break;
+            } else {
+                qDebug() << "Failed to load image data for image:" << imageName;
+                retryCount++;
+                thumbnailSocket.abort();
+                QThread::msleep(100 * retryCount); // 延迟一段时间后重试
+                continue;
+            }
+        } else {
+            qDebug() << "HTTP error for image:" << imageName << "Status code:" << statusCode;
+            retryCount++;
+            thumbnailSocket.abort();
+            QThread::msleep(100 * retryCount); // 延迟一段时间后重试
+            continue;
+        }
+    }
+    
+    // 断开连接
+    thumbnailSocket.disconnectFromHost();
+    
+    // 如果所有重试都失败，记录错误
+    if (retryCount >= maxRetries) {
+        qDebug() << "All retries failed for image:" << imageName;
+    }
 }
 
 //处理图片下载
@@ -922,15 +1207,17 @@ void MainWindow::processDownload()
     if(statusCode == "200")
     {
         QString imagename = user["imagename"].toString();
-        //base64解码
-        QByteArray decode_data = QByteArray::fromBase64(user["imagedata"].toString().toUtf8());
+        
+        // 获取并解码图片数据
+        QByteArray encodedData = user["imagedata"].toString().toUtf8();
+        QByteArray imagedata = decodeImageData(encodedData);
+        
+        // 将解码后的图片数据保存到缓存
+        if (!imageDataCache.contains(imagename)) {
+            imageDataCache[imagename] = imagedata;
+        }
 
-        // AES128解密
-        QByteArray key ("1234567812345678");
-        QAESEncryption aesEnctyption(QAESEncryption::AES_128, QAESEncryption::CBC);
-        QByteArray imagedata = aesEnctyption.decode(decode_data, key, key);
-
-        //显示图片
+        // 显示图片
         QImage image;
         if (image.loadFromData(imagedata)) {
             // 在图形场景中显示图片
@@ -994,8 +1281,31 @@ void MainWindow::processDelete()
         for(int i = 0; i < list.size(); i++)
         {
             // 创建一个标准项用于在ListView中显示图片名称
-            QStandardItem *item = new QStandardItem(list[i].toString());//获取图片名
+            QString imageName = list[i].toString();
+            QStandardItem *item = new QStandardItem(imageName);
+            
+            // 设置默认图标
+            QPixmap defaultIcon(":/new/prefix1/icon.png");
+            if(defaultIcon.isNull()) {
+                QPixmap pixmap(48, 48);
+                pixmap.fill(QColor(100, 149, 237)); // 蓝色
+                item->setData(pixmap, Qt::DecorationRole);
+            } else {
+                item->setData(defaultIcon.scaled(48, 48), Qt::DecorationRole);
+            }
+            
+            item->setToolTip(imageName);
             cloudModel->appendRow(item);
+            
+            // 先检查缓存中是否有此图片的缩略图
+            if (thumbnailCache.contains(imageName)) {
+                item->setData(thumbnailCache[imageName], Qt::DecorationRole);
+            } else {
+                // 只有在缓存中没有时，才创建线程去下载
+                QFuture<void> future = QtConcurrent::run([=]() {
+                    this->downloadThumbnail(imageName, item);
+                });
+            }
         }
     }
     if(statusCode == "500") //删除失败或数据库连接失败
@@ -1039,6 +1349,12 @@ void MainWindow::on_pushButtonLogout_clicked()
     if (!m_username.isEmpty()) {
         // 清除登录状态
         userLoginStatus.clear();
+        
+        // 清空缩略图缓存
+        thumbnailCache.clear();
+        // 清空图片数据缓存
+        imageDataCache.clear();
+        
         // 显示退出登录消息
         QMessageBox::information(this, "提示", "已退出登录");
         // 切换到登录界面
@@ -1093,36 +1409,41 @@ void MainWindow::processManageList()
         QJsonArray list = user["list"].toArray();
         if(list.isEmpty()) {
             QMessageBox::information(this, "提示", "您的云端图片库为空");
-        } else {
-            // 创建进度对话框
-            QProgressDialog progress("正在加载缩略图...", "取消", 0, list.size(), this);
-            progress.setWindowModality(Qt::WindowModal);
-            progress.setMinimumDuration(500); // 只有操作超过500ms才显示进度对话框
-            
+            return;
+        }
+        
+        // 先显示文件名列表
             for(int i = 0; i < list.size(); i++)
             {
-                progress.setValue(i);
-                if (progress.wasCanceled())
-                    break;
-                    
                 // 创建一个标准项用于在ListView中显示图片名称
                 QString imageName = list[i].toString();
                 QStandardItem *item = new QStandardItem(imageName);
                 
-                // 下载图片并生成缩略图
-                downloadThumbnail(imageName, item);
-                
-                // 添加工具提示，方便用户查看完整文件名
+            // 设置默认图标
+            QPixmap defaultIcon(":/new/prefix1/icon.png");
+            if(defaultIcon.isNull()) {
+                QPixmap pixmap(48, 48);
+                pixmap.fill(QColor(100, 149, 237)); // 蓝色
+                item->setData(pixmap, Qt::DecorationRole);
+            } else {
+                item->setData(defaultIcon.scaled(48, 48), Qt::DecorationRole);
+            }
+            
+            // 添加工具提示
                 item->setToolTip(imageName);
                 
                 // 添加到模型
                 manageModel->appendRow(item);
                 
-                // 处理一下其他事件，保持界面响应
-                QApplication::processEvents();
+            // 先检查缓存中是否有此图片的缩略图
+            if (thumbnailCache.contains(imageName)) {
+                item->setData(thumbnailCache[imageName], Qt::DecorationRole);
+            } else {
+                // 只有在缓存中没有时，才创建线程去下载
+                QFuture<void> future = QtConcurrent::run([=]() {
+                    this->downloadThumbnail(imageName, item);
+                });
             }
-            
-            progress.setValue(list.size());
         }
     }
     else if(statusCode == "500")//获取列表失败
@@ -1130,146 +1451,6 @@ void MainWindow::processManageList()
         QString msg = user["msg"].toString();
         QMessageBox::warning(this, "获取图片列表失败", msg);
     }
-}
-
-// 下载图片并生成缩略图
-void MainWindow::downloadThumbnail(const QString &imageName, QStandardItem *item)
-{
-    // 先设置一个默认图标，以防下载失败
-    QPixmap defaultIcon(":/new/prefix1/icon.png");
-    if(defaultIcon.isNull()) {
-        QPixmap pixmap(24, 24);
-        pixmap.fill(QColor(100, 149, 237)); // 蓝色
-        item->setData(pixmap, Qt::DecorationRole);
-    } else {
-        item->setData(defaultIcon.scaled(24, 24), Qt::DecorationRole);
-    }
-    
-    // 创建一个新的套接字用于下载缩略图，避免干扰主套接字
-    QSslSocket *thumbnailSocket = new QSslSocket(this);
-    
-    // 加载并信任CA证书
-    QFile certFile("C:\\Users\\administered\\Desktop\\client\\ca.crt");
-    if (certFile.open(QIODevice::ReadOnly)) {
-        QSslCertificate cert(&certFile, QSsl::Pem);
-        QList<QSslCertificate> certs;
-        certs.append(cert);
-
-        QSslConfiguration sslConfig = thumbnailSocket->sslConfiguration();
-        sslConfig.setCaCertificates(certs);
-        thumbnailSocket->setSslConfiguration(sslConfig);
-        certFile.close();
-    }
-    
-    // 设置验证模式
-    thumbnailSocket->setPeerVerifyMode(QSslSocket::VerifyPeer);
-    
-    // 连接服务器
-    thumbnailSocket->connectToHostEncrypted("192.168.234.128", 8080);
-    if(!thumbnailSocket->waitForEncrypted(1000)) {
-        delete thumbnailSocket;
-        return;
-    }
-    
-    // 构建HTTP GET请求报文
-    QString request = "GET /download?username=" + m_username + "&imagename=" + imageName + " HTTP/1.1\r\n"
-                      "Host: 192.168.234.128:8080\r\n\r\n";
-                      
-    // 将请求报文字符串转换为QByteArray
-    QByteArray byteArray = request.toUtf8();
-    
-    // 转换为base64编码
-    QByteArray msg_base64 = byteArray.toBase64();
-    
-    // 获取要发送数据大小
-    uint32_t size = msg_base64.size();
-    // 转换为网络字节序
-    size = htonl(size);
-    
-    // 将size作为包头添加到发送数据前面
-    msg_base64.prepend(reinterpret_cast<const char*>(&size), sizeof(size));
-    
-    // 发送请求
-    thumbnailSocket->write(msg_base64);
-    
-    // 等待响应
-    if (!thumbnailSocket->waitForReadyRead(3000)) {
-        delete thumbnailSocket;
-        return;
-    }
-    
-    // 读取响应
-    QByteArray response;
-    while (thumbnailSocket->bytesAvailable() || thumbnailSocket->waitForReadyRead(100)) {
-        response.append(thumbnailSocket->readAll());
-        
-        // 读取包头
-        if (response.size() < 4) continue;
-        
-        uint32_t msglen;
-        memcpy(&msglen, response.data(), 4);
-        msglen = ntohl(msglen);
-        
-        // 如果数据不完整，继续读取
-        if (response.size() < msglen + 4) continue;
-        
-        // 丢弃掉头部4字节数据
-        response = response.mid(4);
-        
-        // base64解码
-        response = QByteArray::fromBase64(response);
-        break;
-    }
-    
-    // 解析HTTP响应
-    int headerEndIndex = response.indexOf("\r\n\r\n");
-    if (headerEndIndex == -1) {
-        delete thumbnailSocket;
-        return;
-    }
-    
-    // 获取状态行
-    QByteArray statusLine = response.left(response.indexOf("\r\n"));
-    
-    // 获取响应体
-    QByteArray jsonBody = response.mid(headerEndIndex + 4);
-    
-    // 将状态行的各个部分存储到列表中
-    QStringList parts = QString::fromUtf8(statusLine).split(" ");
-    
-    // 提取状态码
-    if (parts.size() < 2) {
-        delete thumbnailSocket;
-        return;
-    }
-    
-    QString statusCode = parts.at(1);
-    
-    if (statusCode == "200") {
-        // 将响应体转换为json对象
-        QJsonDocument doc = QJsonDocument::fromJson(jsonBody);
-        QJsonObject user = doc.object();
-        
-        // base64解码
-        QByteArray decode_data = QByteArray::fromBase64(user["imagedata"].toString().toUtf8());
-        
-        // AES128解密
-        QByteArray key ("1234567812345678");
-        QAESEncryption aesEnctyption(QAESEncryption::AES_128, QAESEncryption::CBC);
-        QByteArray imagedata = aesEnctyption.decode(decode_data, key, key);
-        
-        // 加载图片
-        QImage image;
-        if (image.loadFromData(imagedata)) {
-            // 生成缩略图并设置到列表项
-            QPixmap pixmap = QPixmap::fromImage(image);
-            item->setData(pixmap.scaled(48, 48, Qt::KeepAspectRatio, Qt::SmoothTransformation), Qt::DecorationRole);
-        }
-    }
-    
-    // 断开连接并清理
-    thumbnailSocket->disconnectFromHost();
-    thumbnailSocket->deleteLater();
 }
 
 // 下载按钮点击事件
@@ -1300,9 +1481,34 @@ void MainWindow::on_pushButtonDownload_clicked()
         return; // 用户取消了保存
     }
     
+    // 保存路径，供下载完成后使用
+    m_savePath = savePath;
+    
+    // 先检查缓存中是否有此图片数据
+    if (imageDataCache.contains(imagename)) {
+        // 从缓存中获取已解码的图片数据
+        QByteArray imagedata = imageDataCache[imagename];
+        
+        // 保存图片到用户选择的路径
+        QFile file(m_savePath);
+        if(file.open(QIODevice::WriteOnly))
+        {
+            file.write(imagedata);
+            file.close();
+            QMessageBox::information(this, "下载成功", "图片已成功保存到:\n" + m_savePath);
+            return; // 直接返回，不需要从服务器下载
+        }
+        else
+        {
+            QMessageBox::critical(this, "下载失败", "无法保存图片，请检查路径权限");
+            return;
+        }
+    }
+    
+    // 缓存中没有，从服务器下载
     // 请求下载图片
     QString request = "GET /download?username=" + m_username + "&imagename=" + imagename + " HTTP/1.1\r\n"
-                      "Host: 192.168.234.128:8080\r\n\r\n";
+                      "Host: 127.0.0.1:8080\r\n\r\n";
                       
     //将请求报文字符串转换为QByteArray
     QByteArray byteArray = request.toUtf8();
@@ -1317,9 +1523,6 @@ void MainWindow::on_pushButtonDownload_clicked()
     
     //将size作为包头添加到发送数据前面
     msg_base64.prepend(reinterpret_cast<const char*>(&size), sizeof(size));
-    
-    // 保存路径，供下载完成后使用
-    m_savePath = savePath;
     
     //服务器消息处理
     connect(m_tcpsocket, &QSslSocket::readyRead, this, &MainWindow::processManageDownload);
@@ -1360,13 +1563,16 @@ void MainWindow::processManageDownload()
     
     if(statusCode == "200") // 下载成功
     {
-        //base64解码
-        QByteArray decode_data = QByteArray::fromBase64(user["imagedata"].toString().toUtf8());
+        QString imagename = user["imagename"].toString();
         
-        // AES128解密
-        QByteArray key ("1234567812345678");
-        QAESEncryption aesEnctyption(QAESEncryption::AES_128, QAESEncryption::CBC);
-        QByteArray imagedata = aesEnctyption.decode(decode_data, key, key);
+        // 获取并解码图片数据
+        QByteArray encodedData = user["imagedata"].toString().toUtf8();
+        QByteArray imagedata = decodeImageData(encodedData);
+        
+        // 将解码后的图片数据保存到缓存
+        if (!imageDataCache.contains(imagename)) {
+            imageDataCache[imagename] = imagedata;
+        }
         
         // 保存图片到用户选择的路径
         QFile file(m_savePath);
@@ -1421,7 +1627,7 @@ void MainWindow::on_pushButtonDelete_clicked()
     
     // 发送删除请求
     QString request = "DELETE /delete?username=" + m_username + "&imagename=" + imagename + " HTTP/1.1\r\n"
-                      "Host: 192.168.234.128:8080\r\n\r\n";
+                      "Host: 127.0.0.1:8080\r\n\r\n";
                       
     //将请求报文字符串转换为QByteArray
     QByteArray byteArray = request.toUtf8();
@@ -1487,21 +1693,30 @@ void MainWindow::processManageDelete()
             QString imageName = list[i].toString();
             QStandardItem *item = new QStandardItem(imageName);
             
-            // 添加缩略图
+            // 添加默认缩略图
             QPixmap defaultIcon(":/new/prefix1/icon.png");
             if(defaultIcon.isNull()) {
-                // 如果没有图标资源，创建一个简单的彩色方块作为缩略图
-                QPixmap pixmap(24, 24);
+                QPixmap pixmap(48, 48);
                 pixmap.fill(QColor(100, 149, 237)); // 蓝色
                 item->setData(pixmap, Qt::DecorationRole);
             } else {
-                item->setData(defaultIcon.scaled(24, 24), Qt::DecorationRole);
+                item->setData(defaultIcon.scaled(48, 48), Qt::DecorationRole);
             }
             
             // 添加工具提示
             item->setToolTip(imageName);
             
             manageModel->appendRow(item);
+            
+            // 先检查缓存中是否有此图片的缩略图
+            if (thumbnailCache.contains(imageName)) {
+                item->setData(thumbnailCache[imageName], Qt::DecorationRole);
+            } else {
+                // 只有在缓存中没有时，才创建线程去下载
+                QFuture<void> future = QtConcurrent::run([=]() {
+                    this->downloadThumbnail(imageName, item);
+                });
+            }
         }
         
         QMessageBox::information(this, "删除", "图片已成功删除");
@@ -1534,6 +1749,20 @@ void MainWindow::on_pushButtonManageFunction_clicked()
 {
     // 切换到云端图片管理界面
     switchToManagePage();
+}
+
+// 解码图片数据，将base64编码和AES加密的数据解析为原始图片数据
+QByteArray MainWindow::decodeImageData(const QByteArray &encodedData)
+{
+    // Base64解码
+    QByteArray decode_data = QByteArray::fromBase64(encodedData);
+    
+    // AES128解密
+    QByteArray key ("1234567812345678");
+    QAESEncryption aesEnctyption(QAESEncryption::AES_128, QAESEncryption::CBC);
+    QByteArray imagedata = aesEnctyption.decode(decode_data, key, key);
+    
+    return imagedata;
 }
 
 
