@@ -52,6 +52,14 @@ private slots:
     void on_pushButtonDownload_clicked();
     void on_pushButtonDelete_clicked();
     void on_pushButtonShare_clicked();
+    void on_pushButtonCancelShare_clicked();
+    
+    // 新增的图片共享平台相关槽函数
+    void on_pushButtonShareFunction_clicked();
+    void on_pushButtonFlushShare_clicked();
+    void on_pushButtonCollect_clicked();
+    void on_pushButtonBackFromShare_clicked();
+    void on_ListViewShareDoubleClicked(const QModelIndex &index);
 
 private:
     Ui::MainWindow *ui;
@@ -62,13 +70,15 @@ private:
     QWidget *functionPage;
     QWidget *uploadPage;
     QWidget *cloudPage;
-    QWidget *managePage; // 新增的云端图片管理页面
+    QWidget *managePage; // 云端图片管理页面
+    QWidget *sharePage; // 新增的共享图片平台页面
 
     void switchToLoginPage();
     void switchToFunctionPage();
     void switchToUploadPage();
     void switchToCloudPage();
-    void switchToManagePage(); // 新增的切换到云端图片管理页面的方法
+    void switchToManagePage();
+    void switchToSharePage(); // 新增的切换到共享图片平台页面的方法
 
     // 客户端TCP连接
     QSslSocket *m_tcpsocket;
@@ -83,13 +93,15 @@ private:
     // 数据模型
     QStandardItemModel *imageModel;
     QStandardItemModel *cloudModel;
-    QStandardItemModel *manageModel; // 新增的云端图片管理列表模型
+    QStandardItemModel *manageModel;
+    QStandardItemModel *shareModel; // 新增的共享图片列表模型
 
     // 图片相关
     QGraphicsScene *graphicsScene;
     QGraphicsView *graphicsView;
     bool isImageExists(const QString &fileName);
     void downloadThumbnail(const QString &imageName, QStandardItem *item); // 下载并生成缩略图
+    void downloadShareThumbnail(const QString &imageName, const QString &username, QStandardItem *item); // 下载并生成共享图片缩略图
     QByteArray decodeImageData(const QByteArray &encodedData); // 解码图片数据
 
     // 响应消息处理
@@ -102,14 +114,30 @@ private:
     void processDownload();
     void processDelete();
     
-    // 新增的云端图片管理相关处理方法
+    // 云端图片管理相关处理方法
     void processManageList(); // 获取管理列表
     void processManageDownload(); // 处理下载操作
     void processManageDelete(); // 处理删除操作
+    void processShare(); // 处理分享操作
+    void processCancelShare(); // 处理取消分享操作
+    
+    // 共享图片平台相关处理方法
+    void processGetShare(); // 获取共享图片列表
+    void processDownloadShare(); // 处理共享图片下载
+    void processCollect(); // 处理收藏图片
 
     int image_count = 0;
 
     QMap<QString, QPixmap> thumbnailCache; // 添加缩略图缓存
     QMap<QString, QByteArray> imageDataCache; // 存储解码后的完整图片数据缓存
+    QMap<QString, QPixmap> shareThumbCache; // 共享图片缩略图缓存
+    QMap<QString, QByteArray> shareImageDataCache; // 共享图片数据缓存
+    
+    // 共享图片信息存储结构，用于存储图片名和用户名的关联
+    struct ShareImageInfo {
+        QString imageName;
+        QString userName;
+    };
+    QList<ShareImageInfo> shareImageInfoList; // 存储共享图片信息的列表
 };
 #endif // MAINWINDOW_H

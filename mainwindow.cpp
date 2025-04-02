@@ -24,7 +24,7 @@ MainWindow::MainWindow(QWidget *parent)
     m_tcpsocket = new QSslSocket(this);
 
     // 加载并信任CA证书
-    QFile certFile("C:\\Users\\Citrus\\Desktop\\project\\client\\ca.crt");
+    QFile certFile("C:\\Users\\administered\\Desktop\\client\\ca.crt");
     if (certFile.open(QIODevice::ReadOnly)) {
         QSslCertificate cert(&certFile, QSsl::Pem);
         QList<QSslCertificate> certs;
@@ -41,7 +41,7 @@ MainWindow::MainWindow(QWidget *parent)
     m_tcpsocket->setPeerVerifyMode(QSslSocket::VerifyPeer);
     //连接服务器
     if(m_tcpsocket->state() != QSslSocket::ConnectedState) {
-        m_tcpsocket->connectToHostEncrypted("127.0.0.1", 8080);
+        m_tcpsocket->connectToHostEncrypted("192.168.234.128", 8080);
         //连接超时
         if(!m_tcpsocket->waitForEncrypted(1000)) {
             QMessageBox::information(this, "", "连接服务器超时");
@@ -70,6 +70,7 @@ MainWindow::MainWindow(QWidget *parent)
     uploadPage = ui->uploadPage;
     cloudPage = ui->cloudPage;
     managePage = ui->managePage;
+    sharePage = ui->sharePage; // 获取共享页面引用
     
     // 设置所有窗口Widget为透明，这样能看到主窗口的背景
     loginPage->setStyleSheet("QWidget#loginPage { background: transparent; }");
@@ -77,6 +78,7 @@ MainWindow::MainWindow(QWidget *parent)
     uploadPage->setStyleSheet("QWidget#uploadPage { background: transparent; }");
     cloudPage->setStyleSheet("QWidget#cloudPage { background: transparent; }");
     managePage->setStyleSheet("QWidget#managePage { background: transparent; }");
+    sharePage->setStyleSheet("QWidget#sharePage { background: transparent; }"); // 设置共享页面为透明
     
     // 设置堆叠部件为透明
     stackedWidget->setStyleSheet("QStackedWidget { background: transparent; }");
@@ -129,6 +131,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->pushButtonUploadFunction->setStyleSheet(buttonStyle);
     ui->pushButtonCloudFunction->setStyleSheet(buttonStyle);
     ui->pushButtonManageFunction->setStyleSheet(buttonStyle);
+    ui->pushButtonShareFunction->setStyleSheet(buttonStyle); // 添加共享图片平台按钮样式
     ui->pushButtonLogout->setStyleSheet(buttonStyle);
     
     // 应用上传功能页面按钮样式
@@ -144,7 +147,13 @@ MainWindow::MainWindow(QWidget *parent)
     ui->pushButtonDownload->setStyleSheet(buttonStyle);
     ui->pushButtonDelete->setStyleSheet(buttonStyle);
     ui->pushButtonShare->setStyleSheet(buttonStyle);
+    ui->pushButtonCancelShare->setStyleSheet(buttonStyle);
     ui->pushButtonBackFromManage->setStyleSheet(buttonStyle);
+    
+    // 应用共享平台页面按钮样式
+    ui->pushButtonFlushShare->setStyleSheet(buttonStyle);
+    ui->pushButtonCollect->setStyleSheet(buttonStyle);
+    ui->pushButtonBackFromShare->setStyleSheet(buttonStyle);
     
     // 美化标签样式
     QString labelStyle = "QLabel {"
@@ -158,6 +167,9 @@ MainWindow::MainWindow(QWidget *parent)
     ui->labelWelcome->setStyleSheet(labelStyle);
     ui->label_3->setStyleSheet(labelStyle);
     ui->label_4->setStyleSheet(labelStyle);
+    ui->label_6->setStyleSheet(labelStyle);
+    ui->label_7->setStyleSheet(labelStyle); // 应用相同的样式到共享图片平台标题
+    
     ui->label_5->setStyleSheet("QLabel {"
                               "color: white;"
                               "background-color: rgba(0, 0, 0, 70);"
@@ -203,6 +215,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->listViewUpload->setStyleSheet(listViewStyle);
     ui->listViewCloud->setStyleSheet(listViewStyle);
     ui->listViewManage->setStyleSheet(listViewStyle);
+    ui->listViewShare->setStyleSheet(listViewStyle); // 应用相同的样式到共享图片平台列表视图
     
     // 初始界面为登录界面
     switchToLoginPage();
@@ -220,8 +233,15 @@ MainWindow::MainWindow(QWidget *parent)
     manageModel = new QStandardItemModel(this);
     ui->listViewManage->setModel(manageModel);
 
+    //创建共享图片列表模型
+    shareModel = new QStandardItemModel(this);
+    ui->listViewShare->setModel(shareModel);
+
     //当双击云端列表的项时下载图片
     connect(ui->listViewCloud, SIGNAL(doubleClicked(const QModelIndex &)), this, SLOT(on_ListViewCloudDoubleClicked(const QModelIndex &)));
+    
+    //当双击共享列表的项时下载图片
+    connect(ui->listViewShare, SIGNAL(doubleClicked(const QModelIndex &)), this, SLOT(on_ListViewShareDoubleClicked(const QModelIndex &)));
 
     //设置 QListView的上下文菜单策略为自定义上下文菜单模式,当设置为这种模式时，部件会在右键点击时触发 customContextMenuRequested 信号
     ui->listViewCloud->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -249,6 +269,10 @@ void MainWindow::switchToLoginPage()
     thumbnailCache.clear();
     // 清空图片数据缓存
     imageDataCache.clear();
+    // 清空共享图片缓存
+    shareThumbCache.clear();
+    shareImageDataCache.clear();
+    shareImageInfoList.clear();
 }
 
 void MainWindow::switchToFunctionPage()
@@ -312,6 +336,16 @@ void MainWindow::switchToManagePage()
 
     // 通过TCP发送数据
     m_tcpsocket->write(msg_base64);
+}
+
+void MainWindow::switchToSharePage()
+{
+    // 切换到共享图片平台界面
+    stackedWidget->setCurrentWidget(sharePage);
+    
+    // 刷新共享图片列表
+    shareModel->removeRows(0, shareModel->rowCount());
+    on_pushButtonFlushShare_clicked();
 }
 
 MainWindow::~MainWindow()
@@ -961,7 +995,7 @@ void MainWindow::downloadThumbnail(const QString &imageName, QStandardItem *item
         thumbnailSocket.setSocketOption(QAbstractSocket::LowDelayOption, 1);
         
         // 连接服务器
-        thumbnailSocket.connectToHostEncrypted("127.0.0.1", 8080);
+        thumbnailSocket.connectToHostEncrypted("192.168.234.128", 8080);
         if(!thumbnailSocket.waitForEncrypted(3000)) { // 增加超时时间
             qDebug() << "Connection timeout for image:" << imageName << "Error:" << thumbnailSocket.errorString();
             retryCount++;
@@ -1354,6 +1388,10 @@ void MainWindow::on_pushButtonLogout_clicked()
         thumbnailCache.clear();
         // 清空图片数据缓存
         imageDataCache.clear();
+        // 清空共享图片缓存
+        shareThumbCache.clear();
+        shareImageDataCache.clear();
+        shareImageInfoList.clear();
         
         // 显示退出登录消息
         QMessageBox::information(this, "提示", "已退出登录");
@@ -1731,11 +1769,6 @@ void MainWindow::processManageDelete()
     }
 }
 
-// 分享按钮点击事件 (功能暂未实现)
-void MainWindow::on_pushButtonShare_clicked()
-{
-    QMessageBox::information(this, "功能暂未实现", "分享功能暂未实现");
-}
 
 // 返回按钮点击事件
 void MainWindow::on_pushButtonBackFromManage_clicked()
@@ -1763,6 +1796,851 @@ QByteArray MainWindow::decodeImageData(const QByteArray &encodedData)
     QByteArray imagedata = aesEnctyption.decode(decode_data, key, key);
     
     return imagedata;
+}
+
+// 新增的共享图片平台相关槽函数实现
+
+// 共享图片平台功能按钮
+void MainWindow::on_pushButtonShareFunction_clicked()
+{
+    // 切换到共享图片平台界面
+    switchToSharePage();
+}
+
+// 刷新共享图片列表按钮
+void MainWindow::on_pushButtonFlushShare_clicked()
+{
+    //检查是否处于登录状态
+    if(userLoginStatus.empty())
+    {
+        QMessageBox::information(this,"提示", "未登录，请登录后再进行操作。");
+        return;
+    }
+    //清空共享图片列表
+    shareModel->removeRows(0, shareModel->rowCount());
+    shareImageInfoList.clear();
+
+    // 构建HTTP GET请求报文获取共享图片列表
+    QString request = "GET /getshare HTTP/1.1\r\n"
+                      "Host: 127.0.0.1:8080\r\n\r\n";
+
+    //将请求报文字符串转换为QByteArray
+    QByteArray byteArray = request.toUtf8();
+
+    //转换为base64编码
+    QByteArray msg_base64 = byteArray.toBase64().constData();
+
+    //获取要发送数据大小
+    uint32_t size = msg_base64.size();
+    //转换为网络字节序
+    size = htonl(size);
+
+    //将size作为包头添加到发送数据前面
+    msg_base64.prepend(reinterpret_cast<const char*>(&size), sizeof(size));
+
+    //服务器消息处理
+    connect(m_tcpsocket, &QSslSocket::readyRead, this, &MainWindow::processGetShare);
+
+    // 通过TCP发送数据
+    m_tcpsocket->write(msg_base64);
+}
+
+// 收藏按钮点击事件 (功能暂未实现)
+void MainWindow::on_pushButtonCollect_clicked()
+{
+    //检查是否处于登录状态
+    if(userLoginStatus.empty())
+    {
+        QMessageBox::information(this,"提示", "未登录，请登录后再进行操作。");
+        return;
+    }
+    
+    // 获取选中的图片
+    QModelIndex index = ui->listViewShare->currentIndex();
+    if(!index.isValid()) {
+        QMessageBox::information(this, "提示", "请先选择要收藏的图片");
+        return;
+    }
+    
+    // 获取图片信息
+    int row = index.row();
+    if (row < 0 || row >= shareImageInfoList.size()) {
+        QMessageBox::warning(this, "提示", "图片信息无效");
+        return;
+    }
+    
+    QString imagename = shareImageInfoList[row].imageName;
+    
+    // 确认收藏
+    QMessageBox::StandardButton reply;
+    reply = QMessageBox::question(this, "确认收藏", "确定要收藏图片 " + imagename + " 吗？",
+                                  QMessageBox::Yes|QMessageBox::No);
+    if(reply == QMessageBox::No) {
+        return;
+    }
+    
+    // 构建JsonObject
+    QJsonObject user;
+    user["username"] = m_username;
+    user["imagename"] = imagename;
+    
+    // 构建请求体
+    QJsonObject msg;
+    msg.insert("user", user);
+    
+    // 构建 QJsonDocument对象
+    QJsonDocument doc(msg);
+    // 将QJsonDocument对象转换为QByteArray
+    QByteArray requestBody = doc.toJson();
+    
+    // 构建HTTP POST请求报文
+    QString request = "POST /collect HTTP/1.1\r\n"
+                      "Host: 127.0.0.1:8080\r\n\r\n";
+    
+    // 添加请求体
+    request += requestBody;
+    
+    // 将请求报文字符串转换为QByteArray
+    QByteArray byteArray = request.toUtf8();
+    
+    // 转换为base64编码
+    QByteArray msg_base64 = byteArray.toBase64().constData();
+    
+    // 获取要发送数据大小
+    uint32_t size = msg_base64.size();
+    // 转换为网络字节序
+    size = htonl(size);
+    
+    // 将size作为包头添加到发送数据前面
+    msg_base64.prepend(reinterpret_cast<const char*>(&size), sizeof(size));
+    
+    // 服务器消息处理
+    connect(m_tcpsocket, &QSslSocket::readyRead, this, &MainWindow::processCollect);
+    
+    // 通过TCP发送数据
+    m_tcpsocket->write(msg_base64);
+}
+
+// 处理收藏响应
+void MainWindow::processCollect()
+{
+    // 获取http响应消息
+    if(!readMsg()) { // 数据不完整
+        return;
+    }
+    
+    // 断开信号和槽
+    disconnect(m_tcpsocket, &QSslSocket::readyRead, this, &MainWindow::processCollect);
+    
+    int headerEndIndex = response.indexOf("\r\n\r\n");
+    // 获取状态行
+    QByteArray statusLine = response.left(headerEndIndex);
+    
+    // 获取响应体
+    QByteArray jsonBody = response.mid(headerEndIndex + 4);
+    
+    // 将状态行的各个部分存储到列表中
+    QStringList parts = QString::fromUtf8(statusLine).split(" ");
+    
+    // 提取状态码
+    QString statusCode = parts.at(1);
+    
+    // 将响应体转换为json对象
+    QJsonDocument doc = QJsonDocument::fromJson(jsonBody);
+    QJsonObject user = doc.object();
+    QString msg = user["msg"].toString();
+    QString request = user["request"].toString();
+    
+    if(statusCode == "200") { // 收藏成功
+        QMessageBox::information(this, request, msg);
+    }
+    else if(statusCode == "404") { // 图片不存在
+        QMessageBox::warning(this, request, msg);
+    }
+    else if(statusCode == "500") { // 服务器错误
+        QMessageBox::critical(this, request, msg);
+    }
+}
+
+// 双击共享图片下载并显示
+void MainWindow::on_ListViewShareDoubleClicked(const QModelIndex &index)
+{
+    if (!index.isValid()) {
+        return;
+    }
+    
+    // 获取图片信息
+    int row = index.row();
+    if (row < 0 || row >= shareImageInfoList.size()) {
+        return;
+    }
+    
+    QString imagename = shareImageInfoList[row].imageName;
+    QString username = shareImageInfoList[row].userName;
+    
+    // 构建缓存键 (username_imagename)
+    QString cacheKey = username + "_" + imagename;
+    
+    // 先检查缓存中是否有此图片数据
+    if (shareImageDataCache.contains(cacheKey)) {
+        // 从缓存中获取已解码的图片数据
+        QByteArray imagedata = shareImageDataCache[cacheKey];
+        
+        // 显示图片
+        QImage image;
+        if (image.loadFromData(imagedata)) {
+            // 在图形场景中显示图片
+            graphicsScene->clear();
+            graphicsScene->addPixmap(QPixmap::fromImage(image));
+            graphicsView->setSceneRect(image.rect());
+            
+            // 设置窗口标题包含分享者信息
+            graphicsView->setWindowTitle(username + " 分享的图片: " + imagename);
+            graphicsView->show();
+            return; // 直接返回，不需要从服务器下载
+        }
+    }
+    
+    // 缓存中没有或加载失败，从服务器下载
+    // 构建HTTP GET请求报文
+    QString request = "GET /downloadshare?username=" + username + "&imagename=" + imagename + " HTTP/1.1\r\n"
+                      "Host: 127.0.0.1:8080\r\n\r\n";
+
+    // 将请求报文字符串转换为QByteArray
+    QByteArray byteArray = request.toUtf8();
+
+    // 转换为base64编码
+    QByteArray msg_base64 = byteArray.toBase64().constData();
+
+    // 获取要发送数据大小
+    uint32_t size = msg_base64.size();
+    // 转换为网络字节序
+    size = htonl(size);
+
+    // 将size作为包头添加到发送数据前面
+    msg_base64.prepend(reinterpret_cast<const char*>(&size), sizeof(size));
+
+    // 服务器消息处理
+    connect(m_tcpsocket, &QSslSocket::readyRead, this, &MainWindow::processDownloadShare);
+
+    // 通过TCP发送数据
+    m_tcpsocket->write(msg_base64);
+}
+
+// 处理获取共享图片列表的响应
+void MainWindow::processGetShare()
+{
+    // 获取http响应消息
+    if(!readMsg()) { // 数据不完整
+        return;
+    }
+
+    // 断开信号和槽
+    disconnect(m_tcpsocket, &QSslSocket::readyRead, this, &MainWindow::processGetShare);
+
+    int headerEndIndex = response.indexOf("\r\n\r\n");
+    // 获取状态行
+    QByteArray statusLine = response.left(headerEndIndex);
+
+    // 获取响应体
+    QByteArray jsonBody = response.mid(headerEndIndex + 4);
+
+    // 将状态行的各个部分存储到列表中
+    QStringList parts = QString::fromUtf8(statusLine).split(" ");
+
+    // 提取状态码
+    QString statusCode = parts.at(1);
+
+    // 将响应体转换为json对象
+    QJsonDocument doc = QJsonDocument::fromJson(jsonBody);
+    QJsonObject jsonObj = doc.object();
+    
+    if(statusCode == "200") { // 获取列表成功
+        QJsonArray shareList = jsonObj["list"].toArray();
+        if(shareList.isEmpty()) {
+            QMessageBox::information(this, "提示", "共享图片库为空");
+            return;
+        }
+
+        // 清空共享图片信息列表
+        shareImageInfoList.clear();
+
+        // 先显示文件名列表
+        for(int i = 0; i < shareList.size(); i++) {
+            QJsonObject imageInfo = shareList[i].toObject();
+            QString imageName = imageInfo["imagename"].toString();
+            QString userName = imageInfo["username"].toString();
+            
+            // 存储图片信息
+            ShareImageInfo info;
+            info.imageName = imageName;
+            info.userName = userName;
+            shareImageInfoList.append(info);
+            
+            // 构建缓存键
+            QString cacheKey = userName + "_" + imageName;
+            
+            // 创建一个标准项用于在ListView中显示共享图片信息
+            QStandardItem *item = new QStandardItem(imageName);
+            
+            // 添加工具提示显示分享者信息
+            item->setToolTip(userName + " 分享的图片: " + imageName);
+            
+            // 设置默认图标
+            QPixmap defaultIcon(":/new/prefix1/icon.png");
+            if(defaultIcon.isNull()) {
+                QPixmap pixmap(48, 48);
+                pixmap.fill(QColor(100, 149, 237)); // 蓝色
+                item->setData(pixmap, Qt::DecorationRole);
+            } else {
+                item->setData(defaultIcon.scaled(48, 48), Qt::DecorationRole);
+            }
+            
+            shareModel->appendRow(item);
+            
+            // 先检查缓存中是否有此图片的缩略图
+            if (shareThumbCache.contains(cacheKey)) {
+                item->setData(shareThumbCache[cacheKey], Qt::DecorationRole);
+            } else {
+                // 只有在缓存中没有时，才创建线程去下载
+                QFuture<void> future = QtConcurrent::run([=]() {
+                    this->downloadShareThumbnail(imageName, userName, item);
+                });
+            }
+        }
+    }
+    else if(statusCode == "500") { // 获取列表失败
+        QString msg = jsonObj["msg"].toString();
+        QMessageBox::warning(this, "获取共享图片列表失败", msg);
+    }
+}
+
+// 处理下载共享图片的响应
+void MainWindow::processDownloadShare()
+{
+    // 获取http响应消息
+    if(!readMsg()) { // 数据不完整
+        return;
+    }
+
+    // 断开信号和槽
+    disconnect(m_tcpsocket, &QSslSocket::readyRead, this, &MainWindow::processDownloadShare);
+
+    int headerEndIndex = response.indexOf("\r\n\r\n");
+    // 获取状态行
+    QByteArray statusLine = response.left(headerEndIndex);
+
+    // 获取响应体
+    QByteArray jsonBody = response.mid(headerEndIndex + 4);
+
+    // 将状态行的各个部分存储到列表中
+    QStringList parts = QString::fromUtf8(statusLine).split(" ");
+
+    // 提取状态码
+    QString statusCode = parts.at(1);
+
+    // 将响应体转换为json对象
+    QJsonDocument doc = QJsonDocument::fromJson(jsonBody);
+    QJsonObject user = doc.object();
+    QString msg = user["msg"].toString();
+
+    // 下载成功显示图片
+    if(statusCode == "200") {
+        QString imagename = user["imagename"].toString();
+        QString username = user["username"].toString();
+        
+        // 构建缓存键
+        QString cacheKey = username + "_" + imagename;
+        
+        // 获取并解码图片数据
+        QByteArray encodedData = user["imagedata"].toString().toUtf8();
+        QByteArray imagedata = decodeImageData(encodedData);
+        
+        // 将解码后的图片数据保存到缓存
+        if (!shareImageDataCache.contains(cacheKey)) {
+            shareImageDataCache[cacheKey] = imagedata;
+        }
+
+        // 显示图片
+        QImage image;
+        if (image.loadFromData(imagedata)) {
+            // 在图形场景中显示图片
+            graphicsScene->clear();
+            graphicsScene->addPixmap(QPixmap::fromImage(image));
+            graphicsView->setSceneRect(image.rect());
+            graphicsView->setWindowTitle(username + " 分享的图片: " + imagename);
+            graphicsView->show();
+        } else {
+            qDebug() << "无法加载共享图片数据";
+        }
+    }
+    else if(statusCode == "403") { // 图片不存在
+        QMessageBox::information(this, "下载共享图片", msg);
+    }
+    else if(statusCode == "500") { // 数据库连接失败
+        QMessageBox::information(this, "下载共享图片", msg);
+    }
+}
+
+//下载共享图片缩略图
+void MainWindow::downloadShareThumbnail(const QString &imageName, const QString &username, QStandardItem *item)
+{
+    // 创建一个新的套接字用于下载缩略图
+    QSslSocket thumbnailSocket;
+    
+    // 记录重试次数
+    int retryCount = 0;
+    const int maxRetries = 3;
+    
+    // 构建缓存键 (username_imagename)
+    QString cacheKey = username + "_" + imageName;
+    
+    while (retryCount < maxRetries) {
+        // 设置验证模式
+        thumbnailSocket.setPeerVerifyMode(QSslSocket::VerifyNone);
+        
+        // 设置超时
+        thumbnailSocket.setSocketOption(QAbstractSocket::LowDelayOption, 1);
+        
+        // 连接服务器
+        thumbnailSocket.connectToHostEncrypted("192.168.234.128", 8080);
+        if(!thumbnailSocket.waitForEncrypted(3000)) { // 增加超时时间
+            qDebug() << "Connection timeout for shared image:" << imageName << "from user:" << username << "Error:" << thumbnailSocket.errorString();
+            retryCount++;
+            thumbnailSocket.abort();
+            QThread::msleep(100 * retryCount); // 延迟一段时间后重试
+            continue;
+        }
+        
+        // 构建HTTP GET请求报文
+        QString request = "GET /downloadshare?username=" + username + "&imagename=" + imageName + " HTTP/1.1\r\n"
+                        "Host: 127.0.0.1:8080\r\n\r\n";
+                        
+        // 将请求报文字符串转换为QByteArray
+        QByteArray byteArray = request.toUtf8();
+        
+        // 转换为base64编码
+        QByteArray msg_base64 = byteArray.toBase64();
+        
+        // 获取要发送数据大小
+        uint32_t size = msg_base64.size();
+        // 转换为网络字节序
+        size = htonl(size);
+        
+        // 将size作为包头添加到发送数据前面
+        msg_base64.prepend(reinterpret_cast<const char*>(&size), sizeof(size));
+        
+        // 发送请求
+        qint64 bytesWritten = thumbnailSocket.write(msg_base64);
+        if (bytesWritten != msg_base64.size()) {
+            qDebug() << "Failed to write all data for shared image:" << imageName << "from user:" << username;
+            retryCount++;
+            thumbnailSocket.abort();
+            QThread::msleep(100 * retryCount); // 延迟一段时间后重试
+            continue;
+        }
+        
+        // 确保所有数据已发送
+        if (!thumbnailSocket.waitForBytesWritten(3000)) {
+            qDebug() << "Failed to write data for shared image:" << imageName << "from user:" << username << "Error:" << thumbnailSocket.errorString();
+            retryCount++;
+            thumbnailSocket.abort();
+            QThread::msleep(100 * retryCount); // 延迟一段时间后重试
+            continue;
+        }
+        
+        // 等待响应
+        if (!thumbnailSocket.waitForReadyRead(5000)) { // 增加超时时间
+            qDebug() << "Response timeout for shared image:" << imageName << "from user:" << username << "Error:" << thumbnailSocket.errorString();
+            retryCount++;
+            thumbnailSocket.abort();
+            QThread::msleep(100 * retryCount); // 延迟一段时间后重试
+            continue;
+        }
+        
+        // 读取响应
+        QByteArray response;
+        bool readComplete = false;
+        int readAttempts = 0;
+        const int maxReadAttempts = 10;
+        
+        while (!readComplete && readAttempts < maxReadAttempts) {
+            if (thumbnailSocket.bytesAvailable() > 0) {
+                response.append(thumbnailSocket.readAll());
+            } else if (!thumbnailSocket.waitForReadyRead(1000)) {
+                readAttempts++;
+                continue;
+            } else {
+                response.append(thumbnailSocket.readAll());
+            }
+            
+            // 读取包头
+            if (response.size() < 4) continue;
+            
+            uint32_t msglen;
+            memcpy(&msglen, response.data(), 4);
+            msglen = ntohl(msglen);
+            
+            // 如果数据不完整，继续读取
+            if (response.size() < msglen + 4) continue;
+            
+            // 丢弃掉头部4字节数据
+            response = response.mid(4);
+            
+            // base64解码
+            response = QByteArray::fromBase64(response);
+            readComplete = true;
+            break;
+        }
+        
+        if (!readComplete) {
+            qDebug() << "Failed to read complete data for shared image:" << imageName << "from user:" << username;
+            retryCount++;
+            thumbnailSocket.abort();
+            QThread::msleep(100 * retryCount); // 延迟一段时间后重试
+            continue;
+        }
+        
+        // 解析HTTP响应
+        int headerEndIndex = response.indexOf("\r\n\r\n");
+        if (headerEndIndex == -1) {
+            qDebug() << "Invalid HTTP response for shared image:" << imageName << "from user:" << username;
+            retryCount++;
+            thumbnailSocket.abort();
+            QThread::msleep(100 * retryCount); // 延迟一段时间后重试
+            continue;
+        }
+        
+        // 获取状态行
+        QByteArray statusLine = response.left(response.indexOf("\r\n"));
+        
+        // 获取响应体
+        QByteArray jsonBody = response.mid(headerEndIndex + 4);
+        
+        // 将状态行的各个部分存储到列表中
+        QStringList parts = QString::fromUtf8(statusLine).split(" ");
+        
+        // 提取状态码
+        if (parts.size() < 2) {
+            qDebug() << "Invalid status line for shared image:" << imageName << "from user:" << username;
+            retryCount++;
+            thumbnailSocket.abort();
+            QThread::msleep(100 * retryCount); // 延迟一段时间后重试
+            continue;
+        }
+        
+        QString statusCode = parts.at(1);
+        
+        if (statusCode == "200") {
+            // 将响应体转换为json对象
+            QJsonDocument doc = QJsonDocument::fromJson(jsonBody);
+            if (doc.isNull()) {
+                qDebug() << "Invalid JSON response for shared image:" << imageName << "from user:" << username;
+                retryCount++;
+                thumbnailSocket.abort();
+                QThread::msleep(100 * retryCount); // 延迟一段时间后重试
+                continue;
+            }
+            
+            QJsonObject user = doc.object();
+            
+            // base64解码
+            QByteArray decode_data = QByteArray::fromBase64(user["imagedata"].toString().toUtf8());
+            if (decode_data.isEmpty()) {
+                qDebug() << "Empty image data for shared image:" << imageName << "from user:" << username;
+                retryCount++;
+                thumbnailSocket.abort();
+                QThread::msleep(100 * retryCount); // 延迟一段时间后重试
+                continue;
+            }
+            
+            // AES128解密
+            QByteArray key ("1234567812345678");
+            QAESEncryption aesEnctyption(QAESEncryption::AES_128, QAESEncryption::CBC);
+            QByteArray imagedata = aesEnctyption.decode(decode_data, key, key);
+            if (imagedata.isEmpty()) {
+                qDebug() << "Failed to decrypt image data for shared image:" << imageName << "from user:" << username;
+                retryCount++;
+                thumbnailSocket.abort();
+                QThread::msleep(100 * retryCount); // 延迟一段时间后重试
+                continue;
+            }
+            
+            // 将解码后的图片数据保存到缓存
+            QMetaObject::invokeMethod(this, [this, cacheKey, imagedata]() {
+                if (!shareImageDataCache.contains(cacheKey)) {
+                    shareImageDataCache[cacheKey] = imagedata;
+                }
+            }, Qt::QueuedConnection);
+            
+            // 加载图片
+            QImage image;
+            if (image.loadFromData(imagedata)) {
+                // 生成缩略图并设置到列表项
+                QPixmap pixmap = QPixmap::fromImage(image);
+                QPixmap thumbnail = pixmap.scaled(48, 48, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+                
+                // 保存到缓存
+                shareThumbCache[cacheKey] = thumbnail;
+                
+                // 使用主线程更新UI
+                QMetaObject::invokeMethod(this, [this, item, thumbnail]() {
+                    item->setData(thumbnail, Qt::DecorationRole);
+                }, Qt::QueuedConnection);
+                
+                // 成功处理，退出循环
+                break;
+            } else {
+                qDebug() << "Failed to load image data for shared image:" << imageName << "from user:" << username;
+                retryCount++;
+                thumbnailSocket.abort();
+                QThread::msleep(100 * retryCount); // 延迟一段时间后重试
+                continue;
+            }
+        } else {
+            qDebug() << "HTTP error for shared image:" << imageName << "from user:" << username << "Status code:" << statusCode;
+            retryCount++;
+            thumbnailSocket.abort();
+            QThread::msleep(100 * retryCount); // 延迟一段时间后重试
+            continue;
+        }
+    }
+    
+    // 断开连接
+    thumbnailSocket.disconnectFromHost();
+    
+    // 如果所有重试都失败，记录错误
+    if (retryCount >= maxRetries) {
+        qDebug() << "All retries failed for shared image:" << imageName << "from user:" << username;
+    }
+}
+
+// 云端图片管理页面分享按钮点击事件
+void MainWindow::on_pushButtonShare_clicked()
+{
+    //检查是否处于登录状态
+    if(userLoginStatus.empty())
+    {
+        QMessageBox::information(this,"提示", "未登录，请登录后再进行操作。");
+        return;
+    }
+    
+    // 获取选中的图片
+    QModelIndex index = ui->listViewManage->currentIndex();
+    if(!index.isValid()) {
+        QMessageBox::information(this, "提示", "请先选择要分享的图片");
+        return;
+    }
+    
+    // 获取图片名称
+    QString imagename = manageModel->data(index, Qt::DisplayRole).toString();
+    
+    // 确认分享
+    QMessageBox::StandardButton reply;
+    reply = QMessageBox::question(this, "确认分享", "确定要分享图片 " + imagename + " 吗？分享后其他用户可以查看该图片。",
+                                  QMessageBox::Yes|QMessageBox::No);
+    if(reply == QMessageBox::No) {
+        return;
+    }
+    
+    // 构建JsonObject
+    QJsonObject user;
+    user["username"] = m_username;
+    user["imagename"] = imagename;
+    
+    // 构建请求体
+    QJsonObject msg;
+    msg.insert("user", user);
+    
+    // 构建 QJsonDocument对象
+    QJsonDocument doc(msg);
+    // 将QJsonDocument对象转换为QByteArray
+    QByteArray requestBody = doc.toJson();
+    
+    // 构建HTTP POST请求报文
+    QString request = "POST /upshare HTTP/1.1\r\n"
+                      "Host: 127.0.0.1:8080\r\n\r\n";
+    
+    // 添加请求体
+    request += requestBody;
+    
+    // 将请求报文字符串转换为QByteArray
+    QByteArray byteArray = request.toUtf8();
+    
+    // 转换为base64编码
+    QByteArray msg_base64 = byteArray.toBase64().constData();
+    
+    // 获取要发送数据大小
+    uint32_t size = msg_base64.size();
+    // 转换为网络字节序
+    size = htonl(size);
+    
+    // 将size作为包头添加到发送数据前面
+    msg_base64.prepend(reinterpret_cast<const char*>(&size), sizeof(size));
+    
+    // 服务器消息处理
+    connect(m_tcpsocket, &QSslSocket::readyRead, this, &MainWindow::processShare);
+    
+    // 通过TCP发送数据
+    m_tcpsocket->write(msg_base64);
+}
+
+// 处理分享响应
+void MainWindow::processShare()
+{
+    // 获取http响应消息
+    if(!readMsg()) { // 数据不完整
+        return;
+    }
+    
+    // 断开信号和槽
+    disconnect(m_tcpsocket, &QSslSocket::readyRead, this, &MainWindow::processShare);
+    
+    int headerEndIndex = response.indexOf("\r\n\r\n");
+    // 获取状态行
+    QByteArray statusLine = response.left(headerEndIndex);
+    
+    // 获取响应体
+    QByteArray jsonBody = response.mid(headerEndIndex + 4);
+    
+    // 将状态行的各个部分存储到列表中
+    QStringList parts = QString::fromUtf8(statusLine).split(" ");
+    
+    // 提取状态码
+    QString statusCode = parts.at(1);
+    
+    // 将响应体转换为json对象
+    QJsonDocument doc = QJsonDocument::fromJson(jsonBody);
+    QJsonObject user = doc.object();
+    QString msg = user["msg"].toString();
+    QString request = user["request"].toString();
+    if(statusCode == "200") { // 分享成功
+        QMessageBox::information(this, request, msg);
+    }
+    else if(statusCode == "403") { // 图片不存在或没有权限
+        QMessageBox::warning(this, request, msg);
+    }
+    else if(statusCode == "500") { // 服务器错误
+        QMessageBox::critical(this, request, msg);
+    }
+}
+
+// 云端图片管理页面取消分享按钮点击事件
+void MainWindow::on_pushButtonCancelShare_clicked()
+{
+    //检查是否处于登录状态
+    if(userLoginStatus.empty())
+    {
+        QMessageBox::information(this,"提示", "未登录，请登录后再进行操作。");
+        return;
+    }
+    
+    // 获取选中的图片
+    QModelIndex index = ui->listViewManage->currentIndex();
+    if(!index.isValid()) {
+        QMessageBox::information(this, "提示", "请先选择要取消分享的图片");
+        return;
+    }
+    
+    // 获取图片名称
+    QString imagename = manageModel->data(index, Qt::DisplayRole).toString();
+    
+    // 确认取消分享
+    QMessageBox::StandardButton reply;
+    reply = QMessageBox::question(this, "确认取消分享", "确定要取消分享图片 " + imagename + " 吗？取消后其他用户将无法查看该图片。",
+                                  QMessageBox::Yes|QMessageBox::No);
+    if(reply == QMessageBox::No) {
+        return;
+    }
+    
+    // 构建JsonObject
+    QJsonObject user;
+    user["username"] = m_username;
+    user["imagename"] = imagename;
+    
+    // 构建请求体
+    QJsonObject msg;
+    msg.insert("user", user);
+    
+    // 构建 QJsonDocument对象
+    QJsonDocument doc(msg);
+    // 将QJsonDocument对象转换为QByteArray
+    QByteArray requestBody = doc.toJson();
+    
+    // 构建HTTP POST请求报文
+    QString request = "POST /downshare HTTP/1.1\r\n"
+                      "Host: 127.0.0.1:8080\r\n\r\n";
+    
+    // 添加请求体
+    request += requestBody;
+    
+    // 将请求报文字符串转换为QByteArray
+    QByteArray byteArray = request.toUtf8();
+    
+    // 转换为base64编码
+    QByteArray msg_base64 = byteArray.toBase64().constData();
+    
+    // 获取要发送数据大小
+    uint32_t size = msg_base64.size();
+    // 转换为网络字节序
+    size = htonl(size);
+    
+    // 将size作为包头添加到发送数据前面
+    msg_base64.prepend(reinterpret_cast<const char*>(&size), sizeof(size));
+    
+    // 服务器消息处理
+    connect(m_tcpsocket, &QSslSocket::readyRead, this, &MainWindow::processCancelShare);
+    
+    // 通过TCP发送数据
+    m_tcpsocket->write(msg_base64);
+}
+
+// 处理取消分享响应
+void MainWindow::processCancelShare()
+{
+    // 获取http响应消息
+    if(!readMsg()) { // 数据不完整
+        return;
+    }
+    
+    // 断开信号和槽
+    disconnect(m_tcpsocket, &QSslSocket::readyRead, this, &MainWindow::processCancelShare);
+    
+    int headerEndIndex = response.indexOf("\r\n\r\n");
+    // 获取状态行
+    QByteArray statusLine = response.left(headerEndIndex);
+    
+    // 获取响应体
+    QByteArray jsonBody = response.mid(headerEndIndex + 4);
+    
+    // 将状态行的各个部分存储到列表中
+    QStringList parts = QString::fromUtf8(statusLine).split(" ");
+    
+    // 提取状态码
+    QString statusCode = parts.at(1);
+    
+    // 将响应体转换为json对象
+    QJsonDocument doc = QJsonDocument::fromJson(jsonBody);
+    QJsonObject user = doc.object();
+    QString msg = user["msg"].toString();
+    QString request = user["request"].toString();
+    
+    if(statusCode == "200") { // 取消分享成功
+        QMessageBox::information(this, request, msg);
+    }
+    else if(statusCode == "404") { // 图片不存在或没有权限
+        QMessageBox::warning(this, request, msg);
+    }
+    else if(statusCode == "500") { // 服务器错误
+        QMessageBox::critical(this, request, msg);
+    }
+}
+
+// 返回按钮点击事件
+void MainWindow::on_pushButtonBackFromShare_clicked()
+{
+    // 切换回功能选择界面
+    switchToFunctionPage();
 }
 
 

@@ -1,0 +1,10 @@
+release/cloudthumbnailloader.o
+release/main.o
+release/mainwindow.o
+release/qaesencryption.o
+release/qrc_pic.o
+release/qrc_pic.o
+release/shareplatform.o
+release/qrc_pic.o
+release/moc_mainwindow.o
+release/moc_qaesencryption.o

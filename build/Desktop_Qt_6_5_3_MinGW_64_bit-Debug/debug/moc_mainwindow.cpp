@@ -60,11 +60,17 @@ static constexpr auto qt_meta_stringdata_CLASSMainWindowENDCLASS = QtMocHelpers:
     "on_pushButtonBackFromManage_clicked",
     "on_pushButtonDownload_clicked",
     "on_pushButtonDelete_clicked",
-    "on_pushButtonShare_clicked"
+    "on_pushButtonShare_clicked",
+    "on_pushButtonCancelShare_clicked",
+    "on_pushButtonShareFunction_clicked",
+    "on_pushButtonFlushShare_clicked",
+    "on_pushButtonCollect_clicked",
+    "on_pushButtonBackFromShare_clicked",
+    "on_ListViewShareDoubleClicked"
 );
 #else  // !QT_MOC_HAS_STRING_DATA
 struct qt_meta_stringdata_CLASSMainWindowENDCLASS_t {
-    uint offsetsAndSizes[42];
+    uint offsetsAndSizes[54];
     char stringdata0[11];
     char stringdata1[27];
     char stringdata2[1];
@@ -86,6 +92,12 @@ struct qt_meta_stringdata_CLASSMainWindowENDCLASS_t {
     char stringdata18[30];
     char stringdata19[28];
     char stringdata20[27];
+    char stringdata21[33];
+    char stringdata22[35];
+    char stringdata23[32];
+    char stringdata24[29];
+    char stringdata25[35];
+    char stringdata26[30];
 };
 #define QT_MOC_LITERAL(ofs, len) \
     uint(sizeof(qt_meta_stringdata_CLASSMainWindowENDCLASS_t::offsetsAndSizes) + ofs), len 
@@ -111,7 +123,13 @@ Q_CONSTINIT static const qt_meta_stringdata_CLASSMainWindowENDCLASS_t qt_meta_st
         QT_MOC_LITERAL(439, 35),  // "on_pushButtonBackFromManage_c..."
         QT_MOC_LITERAL(475, 29),  // "on_pushButtonDownload_clicked"
         QT_MOC_LITERAL(505, 27),  // "on_pushButtonDelete_clicked"
-        QT_MOC_LITERAL(533, 26)   // "on_pushButtonShare_clicked"
+        QT_MOC_LITERAL(533, 26),  // "on_pushButtonShare_clicked"
+        QT_MOC_LITERAL(560, 32),  // "on_pushButtonCancelShare_clicked"
+        QT_MOC_LITERAL(593, 34),  // "on_pushButtonShareFunction_cl..."
+        QT_MOC_LITERAL(628, 31),  // "on_pushButtonFlushShare_clicked"
+        QT_MOC_LITERAL(660, 28),  // "on_pushButtonCollect_clicked"
+        QT_MOC_LITERAL(689, 34),  // "on_pushButtonBackFromShare_cl..."
+        QT_MOC_LITERAL(724, 29)   // "on_ListViewShareDoubleClicked"
     },
     "MainWindow",
     "on_pushButtonLogin_clicked",
@@ -133,7 +151,13 @@ Q_CONSTINIT static const qt_meta_stringdata_CLASSMainWindowENDCLASS_t qt_meta_st
     "on_pushButtonBackFromManage_clicked",
     "on_pushButtonDownload_clicked",
     "on_pushButtonDelete_clicked",
-    "on_pushButtonShare_clicked"
+    "on_pushButtonShare_clicked",
+    "on_pushButtonCancelShare_clicked",
+    "on_pushButtonShareFunction_clicked",
+    "on_pushButtonFlushShare_clicked",
+    "on_pushButtonCollect_clicked",
+    "on_pushButtonBackFromShare_clicked",
+    "on_ListViewShareDoubleClicked"
 };
 #undef QT_MOC_LITERAL
 #endif // !QT_MOC_HAS_STRING_DATA
@@ -145,7 +169,7 @@ Q_CONSTINIT static const uint qt_meta_data_CLASSMainWindowENDCLASS[] = {
       11,       // revision
        0,       // classname
        0,    0, // classinfo
-      17,   14, // methods
+      23,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
@@ -153,23 +177,29 @@ Q_CONSTINIT static const uint qt_meta_data_CLASSMainWindowENDCLASS[] = {
        0,       // signalCount
 
  // slots: name, argc, parameters, tag, flags, initial metatype offsets
-       1,    0,  116,    2, 0x08,    1 /* Private */,
-       3,    0,  117,    2, 0x08,    2 /* Private */,
-       4,    0,  118,    2, 0x08,    3 /* Private */,
-       5,    0,  119,    2, 0x08,    4 /* Private */,
-       6,    0,  120,    2, 0x08,    5 /* Private */,
-       7,    1,  121,    2, 0x08,    6 /* Private */,
-      10,    1,  124,    2, 0x08,    8 /* Private */,
-      11,    0,  127,    2, 0x08,   10 /* Private */,
-      12,    0,  128,    2, 0x08,   11 /* Private */,
-      13,    0,  129,    2, 0x08,   12 /* Private */,
-      14,    0,  130,    2, 0x08,   13 /* Private */,
-      15,    0,  131,    2, 0x08,   14 /* Private */,
-      16,    0,  132,    2, 0x08,   15 /* Private */,
-      17,    0,  133,    2, 0x08,   16 /* Private */,
-      18,    0,  134,    2, 0x08,   17 /* Private */,
-      19,    0,  135,    2, 0x08,   18 /* Private */,
-      20,    0,  136,    2, 0x08,   19 /* Private */,
+       1,    0,  152,    2, 0x08,    1 /* Private */,
+       3,    0,  153,    2, 0x08,    2 /* Private */,
+       4,    0,  154,    2, 0x08,    3 /* Private */,
+       5,    0,  155,    2, 0x08,    4 /* Private */,
+       6,    0,  156,    2, 0x08,    5 /* Private */,
+       7,    1,  157,    2, 0x08,    6 /* Private */,
+      10,    1,  160,    2, 0x08,    8 /* Private */,
+      11,    0,  163,    2, 0x08,   10 /* Private */,
+      12,    0,  164,    2, 0x08,   11 /* Private */,
+      13,    0,  165,    2, 0x08,   12 /* Private */,
+      14,    0,  166,    2, 0x08,   13 /* Private */,
+      15,    0,  167,    2, 0x08,   14 /* Private */,
+      16,    0,  168,    2, 0x08,   15 /* Private */,
+      17,    0,  169,    2, 0x08,   16 /* Private */,
+      18,    0,  170,    2, 0x08,   17 /* Private */,
+      19,    0,  171,    2, 0x08,   18 /* Private */,
+      20,    0,  172,    2, 0x08,   19 /* Private */,
+      21,    0,  173,    2, 0x08,   20 /* Private */,
+      22,    0,  174,    2, 0x08,   21 /* Private */,
+      23,    0,  175,    2, 0x08,   22 /* Private */,
+      24,    0,  176,    2, 0x08,   23 /* Private */,
+      25,    0,  177,    2, 0x08,   24 /* Private */,
+      26,    1,  178,    2, 0x08,   25 /* Private */,
 
  // slots: parameters
     QMetaType::Void,
@@ -189,6 +219,12 @@ Q_CONSTINIT static const uint qt_meta_data_CLASSMainWindowENDCLASS[] = {
     QMetaType::Void,
     QMetaType::Void,
     QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void, 0x80000000 | 8,    9,
 
        0        // eod
 };
@@ -237,7 +273,20 @@ Q_CONSTINIT const QMetaObject MainWindow::staticMetaObject = { {
         // method 'on_pushButtonDelete_clicked'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
         // method 'on_pushButtonShare_clicked'
-        QtPrivate::TypeAndForceComplete<void, std::false_type>
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        // method 'on_pushButtonCancelShare_clicked'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        // method 'on_pushButtonShareFunction_clicked'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        // method 'on_pushButtonFlushShare_clicked'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        // method 'on_pushButtonCollect_clicked'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        // method 'on_pushButtonBackFromShare_clicked'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        // method 'on_ListViewShareDoubleClicked'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        QtPrivate::TypeAndForceComplete<const QModelIndex &, std::false_type>
     >,
     nullptr
 } };
@@ -265,6 +314,12 @@ void MainWindow::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, 
         case 14: _t->on_pushButtonDownload_clicked(); break;
         case 15: _t->on_pushButtonDelete_clicked(); break;
         case 16: _t->on_pushButtonShare_clicked(); break;
+        case 17: _t->on_pushButtonCancelShare_clicked(); break;
+        case 18: _t->on_pushButtonShareFunction_clicked(); break;
+        case 19: _t->on_pushButtonFlushShare_clicked(); break;
+        case 20: _t->on_pushButtonCollect_clicked(); break;
+        case 21: _t->on_pushButtonBackFromShare_clicked(); break;
+        case 22: _t->on_ListViewShareDoubleClicked((*reinterpret_cast< std::add_pointer_t<QModelIndex>>(_a[1]))); break;
         default: ;
         }
     }
@@ -289,13 +344,13 @@ int MainWindow::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 17)
+        if (_id < 23)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 17;
+        _id -= 23;
     } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 17)
+        if (_id < 23)
             *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType();
-        _id -= 17;
+        _id -= 23;
     }
     return _id;
 }

@@ -662,6 +662,11 @@ debug/moc_mainwindow.cpp: mainwindow.h \
 		D:/Qt/6.5.3/mingw_64/include/QtNetwork/QSslConfiguration \
 		D:/Qt/6.5.3/mingw_64/include/QtNetwork/qsslconfiguration.h \
 		qaesencryption.h \
+		GridItemDelegate.h \
+		D:/Qt/6.5.3/mingw_64/include/QtWidgets/QStyledItemDelegate \
+		D:/Qt/6.5.3/mingw_64/include/QtGui/QPainter \
+		D:/Qt/6.5.3/mingw_64/include/QtGui/QPixmap \
+		D:/Qt/6.5.3/mingw_64/include/QtWidgets/QApplication \
 		debug/moc_predefs.h \
 		D:/Qt/6.5.3/mingw_64/bin/moc.exe
 	D:\Qt\6.5.3\mingw_64\bin\moc.exe $(DEFINES) --include C:/Users/administered/Desktop/client/debug/moc_predefs.h -ID:/Qt/6.5.3/mingw_64/mkspecs/win32-g++ -IC:/Users/administered/Desktop/client -ID:/Qt/6.5.3/mingw_64/include -ID:/Qt/6.5.3/mingw_64/include/QtWidgets -ID:/Qt/6.5.3/mingw_64/include/QtGui -ID:/Qt/6.5.3/mingw_64/include/QtNetwork -ID:/Qt/6.5.3/mingw_64/include/QtCore -ID:/mingw64/lib/gcc/x86_64-w64-mingw32/13.2.0/include/c++ -ID:/mingw64/lib/gcc/x86_64-w64-mingw32/13.2.0/include/c++/x86_64-w64-mingw32 -ID:/mingw64/lib/gcc/x86_64-w64-mingw32/13.2.0/include/c++/backward -ID:/mingw64/lib/gcc/x86_64-w64-mingw32/13.2.0/include -ID:/mingw64/lib/gcc/x86_64-w64-mingw32/13.2.0/include-fixed -ID:/mingw64/x86_64-w64-mingw32/include mainwindow.h -o debug\moc_mainwindow.cpp
@@ -1326,6 +1331,10 @@ debug/main.o: main.cpp mainwindow.h \
 		D:/Qt/6.5.3/mingw_64/include/QtNetwork/QSslConfiguration \
 		D:/Qt/6.5.3/mingw_64/include/QtNetwork/qsslconfiguration.h \
 		qaesencryption.h \
+		GridItemDelegate.h \
+		D:/Qt/6.5.3/mingw_64/include/QtWidgets/QStyledItemDelegate \
+		D:/Qt/6.5.3/mingw_64/include/QtGui/QPainter \
+		D:/Qt/6.5.3/mingw_64/include/QtGui/QPixmap \
 		D:/Qt/6.5.3/mingw_64/include/QtWidgets/QApplication
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o debug\main.o main.cpp
 
@@ -1869,18 +1878,35 @@ debug/mainwindow.o: mainwindow.cpp mainwindow.h \
 		D:/Qt/6.5.3/mingw_64/include/QtNetwork/QSslConfiguration \
 		D:/Qt/6.5.3/mingw_64/include/QtNetwork/qsslconfiguration.h \
 		qaesencryption.h \
-		ui_mainwindow.h \
+		GridItemDelegate.h \
+		D:/Qt/6.5.3/mingw_64/include/QtWidgets/QStyledItemDelegate \
+		D:/Qt/6.5.3/mingw_64/include/QtGui/QPainter \
+		D:/Qt/6.5.3/mingw_64/include/QtGui/QPixmap \
 		D:/Qt/6.5.3/mingw_64/include/QtWidgets/QApplication \
-		D:/Qt/6.5.3/mingw_64/include/QtWidgets/QHBoxLayout \
-		D:/Qt/6.5.3/mingw_64/include/QtWidgets/QLabel \
-		D:/Qt/6.5.3/mingw_64/include/QtWidgets/QLineEdit \
-		D:/Qt/6.5.3/mingw_64/include/QtWidgets/QListView \
-		D:/Qt/6.5.3/mingw_64/include/QtWidgets/QPushButton \
-		D:/Qt/6.5.3/mingw_64/include/QtWidgets/QSpacerItem \
-		D:/Qt/6.5.3/mingw_64/include/QtWidgets/QStackedWidget \
-		D:/Qt/6.5.3/mingw_64/include/QtWidgets/QStatusBar \
-		D:/Qt/6.5.3/mingw_64/include/QtWidgets/QVBoxLayout \
-		D:/Qt/6.5.3/mingw_64/include/QtWidgets/QWidget
+		ui_mainwindow.h \
+		D:/Qt/6.5.3/mingw_64/include/QtConcurrent/QtConcurrent \
+		D:/Qt/6.5.3/mingw_64/include/QtConcurrent/QtConcurrentDepends \
+		D:/Qt/6.5.3/mingw_64/include/QtConcurrent/qtaskbuilder.h \
+		D:/Qt/6.5.3/mingw_64/include/QtConcurrent/qtconcurrentstoredfunctioncall.h \
+		D:/Qt/6.5.3/mingw_64/include/QtConcurrent/qtconcurrent_global.h \
+		D:/Qt/6.5.3/mingw_64/include/QtConcurrent/qtconcurrentexports.h \
+		D:/Qt/6.5.3/mingw_64/include/QtConcurrent/qtconcurrentrunbase.h \
+		D:/Qt/6.5.3/mingw_64/include/QtConcurrent/qtconcurrentcompilertest.h \
+		D:/Qt/6.5.3/mingw_64/include/QtConcurrent/qtconcurrentfilter.h \
+		D:/Qt/6.5.3/mingw_64/include/QtConcurrent/qtconcurrentfilterkernel.h \
+		D:/Qt/6.5.3/mingw_64/include/QtConcurrent/qtconcurrentiteratekernel.h \
+		D:/Qt/6.5.3/mingw_64/include/QtConcurrent/qtconcurrentmedian.h \
+		D:/Qt/6.5.3/mingw_64/include/QtConcurrent/qtconcurrentthreadengine.h \
+		D:/Qt/6.5.3/mingw_64/include/QtConcurrent/qtconcurrentmapkernel.h \
+		D:/Qt/6.5.3/mingw_64/include/QtConcurrent/qtconcurrentreducekernel.h \
+		D:/Qt/6.5.3/mingw_64/include/QtConcurrent/qtconcurrentfunctionwrappers.h \
+		D:/Qt/6.5.3/mingw_64/include/QtConcurrent/qtconcurrentmap.h \
+		D:/Qt/6.5.3/mingw_64/include/QtConcurrent/qtconcurrentrun.h \
+		D:/Qt/6.5.3/mingw_64/include/QtConcurrent/qtconcurrenttask.h \
+		D:/Qt/6.5.3/mingw_64/include/QtConcurrent/qtconcurrentversion.h \
+		D:/Qt/6.5.3/mingw_64/include/QtCore/QMetaObject \
+		D:/Qt/6.5.3/mingw_64/include/QtCore/QFuture \
+		D:/Qt/6.5.3/mingw_64/include/QtCore/QThread
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o debug\mainwindow.o mainwindow.cpp
 
 debug/qaesencryption.o: qaesencryption.cpp qaesencryption.h \

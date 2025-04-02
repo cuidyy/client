@@ -103,8 +103,22 @@ public:
     QPushButton *pushButtonDownload;
     QPushButton *pushButtonDelete;
     QPushButton *pushButtonShare;
+    QPushButton *pushButtonCancelShare;
     QPushButton *pushButtonBackFromManage;
     QStatusBar *statusbar;
+    QWidget *sharePage;
+    QVBoxLayout *verticalLayout_8;
+    QLabel *label_7;
+    QListView *listViewShare;
+    QHBoxLayout *horizontalLayout_12;
+    QPushButton *pushButtonFlushShare;
+    QPushButton *pushButtonCollect;
+    QPushButton *pushButtonBackFromShare;
+    QHBoxLayout *horizontalLayout_13;
+    QSpacerItem *horizontalSpacer_14;
+    QPushButton *pushButtonShareFunction;
+    QSpacerItem *horizontalSpacer_15;
+    QSpacerItem *verticalSpacer_10;
 
     void setupUi(QMainWindow *MainWindow)
     {
@@ -347,6 +361,30 @@ public:
 
         verticalLayout_4->addItem(verticalSpacer_5);
 
+        horizontalLayout_13 = new QHBoxLayout();
+        horizontalLayout_13->setObjectName("horizontalLayout_13");
+        horizontalSpacer_14 = new QSpacerItem(40, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
+
+        horizontalLayout_13->addItem(horizontalSpacer_14);
+
+        pushButtonShareFunction = new QPushButton(functionPage);
+        pushButtonShareFunction->setObjectName("pushButtonShareFunction");
+        pushButtonShareFunction->setMinimumSize(QSize(180, 60));
+        pushButtonShareFunction->setFont(font4);
+
+        horizontalLayout_13->addWidget(pushButtonShareFunction);
+
+        horizontalSpacer_15 = new QSpacerItem(40, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
+
+        horizontalLayout_13->addItem(horizontalSpacer_15);
+
+
+        verticalLayout_4->addLayout(horizontalLayout_13);
+        
+        verticalSpacer_10 = new QSpacerItem(20, 20, QSizePolicy::Minimum, QSizePolicy::Expanding);
+
+        verticalLayout_4->addItem(verticalSpacer_10);
+
         horizontalLayout_7 = new QHBoxLayout();
         horizontalLayout_7->setObjectName("horizontalLayout_7");
         horizontalSpacer_7 = new QSpacerItem(40, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
@@ -515,6 +553,13 @@ public:
         pushButtonShare->setFont(font6);
 
         horizontalLayout_10->addWidget(pushButtonShare);
+        
+        pushButtonCancelShare = new QPushButton(managePage);
+        pushButtonCancelShare->setObjectName("pushButtonCancelShare");
+        pushButtonCancelShare->setMinimumSize(QSize(0, 40));
+        pushButtonCancelShare->setFont(font6);
+
+        horizontalLayout_10->addWidget(pushButtonCancelShare);
 
         pushButtonBackFromManage = new QPushButton(managePage);
         pushButtonBackFromManage->setObjectName("pushButtonBackFromManage");
@@ -527,6 +572,53 @@ public:
         verticalLayout_7->addLayout(horizontalLayout_10);
 
         stackedWidget->addWidget(managePage);
+        
+        sharePage = new QWidget();
+        sharePage->setObjectName("sharePage");
+        verticalLayout_8 = new QVBoxLayout(sharePage);
+        verticalLayout_8->setObjectName("verticalLayout_8");
+        label_7 = new QLabel(sharePage);
+        label_7->setObjectName("label_7");
+        label_7->setFont(font4);
+        label_7->setStyleSheet(QString::fromUtf8("color: rgb(60, 60, 60);"));
+        label_7->setAlignment(Qt::AlignCenter);
+
+        verticalLayout_8->addWidget(label_7);
+
+        listViewShare = new QListView(sharePage);
+        listViewShare->setObjectName("listViewShare");
+        listViewShare->setFont(font5);
+        listViewShare->setEditTriggers(QAbstractItemView::NoEditTriggers);
+
+        verticalLayout_8->addWidget(listViewShare);
+
+        horizontalLayout_12 = new QHBoxLayout();
+        horizontalLayout_12->setObjectName("horizontalLayout_12");
+        pushButtonFlushShare = new QPushButton(sharePage);
+        pushButtonFlushShare->setObjectName("pushButtonFlushShare");
+        pushButtonFlushShare->setMinimumSize(QSize(0, 40));
+        pushButtonFlushShare->setFont(font6);
+
+        horizontalLayout_12->addWidget(pushButtonFlushShare);
+
+        pushButtonCollect = new QPushButton(sharePage);
+        pushButtonCollect->setObjectName("pushButtonCollect");
+        pushButtonCollect->setMinimumSize(QSize(0, 40));
+        pushButtonCollect->setFont(font6);
+
+        horizontalLayout_12->addWidget(pushButtonCollect);
+
+        pushButtonBackFromShare = new QPushButton(sharePage);
+        pushButtonBackFromShare->setObjectName("pushButtonBackFromShare");
+        pushButtonBackFromShare->setMinimumSize(QSize(0, 40));
+        pushButtonBackFromShare->setFont(font6);
+
+        horizontalLayout_12->addWidget(pushButtonBackFromShare);
+
+
+        verticalLayout_8->addLayout(horizontalLayout_12);
+
+        stackedWidget->addWidget(sharePage);
 
         verticalLayout->addWidget(stackedWidget);
 
@@ -552,6 +644,7 @@ public:
         pushButtonUploadFunction->setText(QCoreApplication::translate("MainWindow", "\345\233\276\347\211\207\344\270\212\344\274\240\345\212\237\350\203\275", nullptr));
         pushButtonCloudFunction->setText(QCoreApplication::translate("MainWindow", "\344\272\221\347\253\257\345\233\276\347\211\207\351\242\204\350\247\210", nullptr));
         pushButtonManageFunction->setText(QCoreApplication::translate("MainWindow", "\344\272\221\347\253\257\345\233\276\347\211\207\347\256\241\347\220\206", nullptr));
+        pushButtonShareFunction->setText(QCoreApplication::translate("MainWindow", "\345\205\261\344\272\253\345\233\276\347\211\207\345\271\263\345\217\260", nullptr));
         pushButtonLogout->setText(QCoreApplication::translate("MainWindow", "\351\200\200\345\207\272\347\231\273\345\275\225", nullptr));
         label_3->setText(QCoreApplication::translate("MainWindow", "\345\276\205\344\270\212\344\274\240\345\233\276\347\211\207\345\210\227\350\241\250", nullptr));
         pushButtonSelectFile->setText(QCoreApplication::translate("MainWindow", "\351\200\211\346\213\251\346\226\207\344\273\266", nullptr));
@@ -565,7 +658,12 @@ public:
         pushButtonDownload->setText(QCoreApplication::translate("MainWindow", "\344\270\213\350\275\275", nullptr));
         pushButtonDelete->setText(QCoreApplication::translate("MainWindow", "\345\210\240\351\231\244", nullptr));
         pushButtonShare->setText(QCoreApplication::translate("MainWindow", "\345\210\206\344\272\253", nullptr));
+        pushButtonCancelShare->setText(QCoreApplication::translate("MainWindow", "\345\217\226\346\266\210\345\210\206\344\272\253", nullptr));
         pushButtonBackFromManage->setText(QCoreApplication::translate("MainWindow", "\350\277\224\345\233\236", nullptr));
+        label_7->setText(QCoreApplication::translate("MainWindow", "\345\205\261\344\272\253\345\233\276\347\211\207\345\271\263\345\217\260", nullptr));
+        pushButtonFlushShare->setText(QCoreApplication::translate("MainWindow", "\345\210\267\346\226\260", nullptr));
+        pushButtonCollect->setText(QCoreApplication::translate("MainWindow", "\346\224\266\350\227\217", nullptr));
+        pushButtonBackFromShare->setText(QCoreApplication::translate("MainWindow", "\350\277\224\345\233\236", nullptr));
     } // retranslateUi
 
 };
