@@ -61,6 +61,17 @@ private slots:
     void on_pushButtonBackFromShare_clicked();
     void on_ListViewShareDoubleClicked(const QModelIndex &index);
 
+    // 新增的在线图片编辑相关槽函数
+    void on_pushButtonEditFunction_clicked();
+    void on_pushButtonBackFromEdit_clicked();
+    void on_pushButtonOpenImage_clicked();
+    void on_pushButtonSaveEditedImage_clicked();
+    void on_pushButtonApplyFilter_clicked();
+    void on_pushButtonCrop_clicked();
+    void on_pushButtonRotate_clicked();
+    void on_pushButtonResize_clicked();
+    void on_pushButtonResetImage_clicked();
+
 private:
     Ui::MainWindow *ui;
 
@@ -72,6 +83,7 @@ private:
     QWidget *cloudPage;
     QWidget *managePage; // 云端图片管理页面
     QWidget *sharePage; // 新增的共享图片平台页面
+    QWidget *editPage; // 新增的在线图片编辑页面
 
     void switchToLoginPage();
     void switchToFunctionPage();
@@ -79,6 +91,7 @@ private:
     void switchToCloudPage();
     void switchToManagePage();
     void switchToSharePage(); // 新增的切换到共享图片平台页面的方法
+    void switchToEditPage(); // 新增的切换到在线图片编辑页面的方法
 
     // 客户端TCP连接
     QSslSocket *m_tcpsocket;
@@ -139,5 +152,26 @@ private:
         QString userName;
     };
     QList<ShareImageInfo> shareImageInfoList; // 存储共享图片信息的列表
+
+    // 图片编辑相关
+    QImage originalImage; // 原始图片
+    QImage editedImage;   // 编辑后的图片
+    QGraphicsScene *editScene; // 图片编辑场景
+    QGraphicsPixmapItem *editPixmapItem; // 图片显示项
+    
+    // 编辑页面按钮
+    QPushButton *m_openImageBtn;
+    QPushButton *m_saveImageBtn;
+    QPushButton *m_applyFilterBtn;
+    QPushButton *m_cropBtn;
+    QPushButton *m_rotateBtn;
+    QPushButton *m_resizeBtn;
+    QPushButton *m_resetImageBtn;
+    QPushButton *m_backFromEditBtn;
+    
+    void applyFilter(const QString &filterType); // 应用滤镜
+    void applyRotation(int degrees); // 应用旋转
+    void applyResize(int width, int height); // 应用缩放
+    void resetImageEditing(); // 重置图片编辑
 };
 #endif // MAINWINDOW_H

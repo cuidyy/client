@@ -256,6 +256,122 @@ MainWindow::MainWindow(QWidget *parent)
     graphicsView->setGeometry(100, 100, 500, 500);
     // 将视图设置为一个独立的窗口形式
     graphicsView->setWindowFlags(Qt::Window);
+
+    // 在线图片编辑页面设置
+    editPage = new QWidget();
+    
+    QVBoxLayout *editLayout = new QVBoxLayout(editPage);
+    
+    QLabel *editTitleLabel = new QLabel("在线图片编辑器");
+    editTitleLabel->setAlignment(Qt::AlignCenter);
+    QFont titleFont = editTitleLabel->font();
+    titleFont.setPointSize(16);
+    titleFont.setBold(true);
+    editTitleLabel->setFont(titleFont);
+    
+    // 创建图像编辑视图区域
+    editScene = new QGraphicsScene(this);
+    QGraphicsView *editView = new QGraphicsView(editScene);
+    editView->setMinimumSize(400, 300);
+    editView->setAlignment(Qt::AlignCenter);
+    editView->setRenderHint(QPainter::Antialiasing);
+    editView->setRenderHint(QPainter::SmoothPixmapTransform);
+    
+    // 创建图像显示项
+    editPixmapItem = new QGraphicsPixmapItem();
+    editScene->addItem(editPixmapItem);
+    
+    // 创建工具按钮区域
+    QHBoxLayout *toolLayout = new QHBoxLayout();
+    
+    // 创建按钮实例
+    QPushButton *openImageBtn = new QPushButton("打开");
+    QPushButton *saveImageBtn = new QPushButton("保存");
+    QPushButton *applyFilterBtn = new QPushButton("滤镜");
+    QPushButton *cropBtn = new QPushButton("裁剪");
+    QPushButton *rotateBtn = new QPushButton("旋转");
+    QPushButton *resizeBtn = new QPushButton("调整大小");
+    QPushButton *resetImageBtn = new QPushButton("重置"); 
+    QPushButton *backFromEditBtn = new QPushButton("返回");
+    
+    // 手动连接信号和槽
+    connect(openImageBtn, &QPushButton::clicked, this, &MainWindow::on_pushButtonOpenImage_clicked);
+    connect(saveImageBtn, &QPushButton::clicked, this, &MainWindow::on_pushButtonSaveEditedImage_clicked);
+    connect(applyFilterBtn, &QPushButton::clicked, this, &MainWindow::on_pushButtonApplyFilter_clicked);
+    connect(cropBtn, &QPushButton::clicked, this, &MainWindow::on_pushButtonCrop_clicked);
+    connect(rotateBtn, &QPushButton::clicked, this, &MainWindow::on_pushButtonRotate_clicked);
+    connect(resizeBtn, &QPushButton::clicked, this, &MainWindow::on_pushButtonResize_clicked);
+    connect(resetImageBtn, &QPushButton::clicked, this, &MainWindow::on_pushButtonResetImage_clicked); // 连接重置按钮信号
+    connect(backFromEditBtn, &QPushButton::clicked, this, &MainWindow::on_pushButtonBackFromEdit_clicked);
+    
+    // 初始状态下，编辑按钮应该是禁用的
+    applyFilterBtn->setEnabled(false);
+    cropBtn->setEnabled(false);
+    rotateBtn->setEnabled(false);
+    resizeBtn->setEnabled(false);
+    saveImageBtn->setEnabled(false);
+    resetImageBtn->setEnabled(false); // 初始状态下禁用重置按钮
+    
+    // 保存按钮引用供后续使用
+    m_openImageBtn = openImageBtn;
+    m_saveImageBtn = saveImageBtn;
+    m_applyFilterBtn = applyFilterBtn;
+    m_cropBtn = cropBtn;
+    m_rotateBtn = rotateBtn;
+    m_resizeBtn = resizeBtn;
+    m_resetImageBtn = resetImageBtn; // 保存重置按钮引用
+    m_backFromEditBtn = backFromEditBtn;
+    
+    // 设置按钮样式
+    QString editButtonStyle = "QPushButton {"
+                             "border-radius: 5px;"
+                             "padding: 8px;"
+                             "color: white;"
+                             "border: none;"
+                             "background-color: rgba(60, 60, 60, 220);"
+                             "}"
+                             "QPushButton:hover {"
+                             "background-color: rgba(80, 80, 80, 240);"
+                             "}"
+                             "QPushButton:pressed {"
+                             "background-color: rgba(40, 40, 40, 250);"
+                             "}"
+                             "QPushButton:disabled {"
+                             "background-color: rgba(120, 120, 120, 150);"
+                             "color: rgba(200, 200, 200, 150);"
+                             "}";
+    
+    openImageBtn->setStyleSheet(editButtonStyle);
+    saveImageBtn->setStyleSheet(editButtonStyle);
+    applyFilterBtn->setStyleSheet(editButtonStyle);
+    cropBtn->setStyleSheet(editButtonStyle);
+    rotateBtn->setStyleSheet(editButtonStyle);
+    resizeBtn->setStyleSheet(editButtonStyle);
+    resetImageBtn->setStyleSheet(editButtonStyle); // 设置重置按钮样式
+    backFromEditBtn->setStyleSheet(editButtonStyle);
+    
+    // 添加按钮到布局
+    toolLayout->addWidget(openImageBtn);
+    toolLayout->addWidget(saveImageBtn);
+    toolLayout->addWidget(applyFilterBtn);
+    toolLayout->addWidget(cropBtn);
+    toolLayout->addWidget(rotateBtn);
+    toolLayout->addWidget(resizeBtn);
+    toolLayout->addWidget(resetImageBtn); // 添加重置按钮到布局
+    toolLayout->addWidget(backFromEditBtn);
+    
+    // 将所有组件添加到编辑页面布局
+    editLayout->addWidget(editTitleLabel);
+    editLayout->addWidget(editView);
+    editLayout->addLayout(toolLayout);
+    
+    // 将编辑页面添加到堆栈窗口
+    stackedWidget->addWidget(editPage);
+
+    // 连接在线图片编辑按钮信号
+    connect(ui->pushButtonEditFunction, SIGNAL(clicked()), this, SLOT(on_pushButtonEditFunction_clicked()));
+    
+    // ... existing code ...
 }
 
 // 界面切换函数
@@ -2721,6 +2837,558 @@ void MainWindow::on_pushButtonBackFromShare_clicked()
 {
     // 切换回功能选择界面
     switchToFunctionPage();
+}
+
+// 在线图片编辑按钮点击事件
+void MainWindow::on_pushButtonEditFunction_clicked()
+{
+    switchToEditPage();
+}
+
+// 切换到在线图片编辑页面
+void MainWindow::switchToEditPage()
+{
+    stackedWidget->setCurrentWidget(editPage);
+}
+
+// 从编辑页面返回功能选择页面
+void MainWindow::on_pushButtonBackFromEdit_clicked()
+{
+    // 询问用户是否保存编辑，只有在有图片被编辑的情况下
+    if (!originalImage.isNull() && !editedImage.isNull()) {
+        QMessageBox::StandardButton reply;
+        reply = QMessageBox::question(this, "退出编辑", "是否保存当前编辑的图片？",
+                                     QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
+        
+        if (reply == QMessageBox::Yes) {
+            // 保存编辑后的图片
+            on_pushButtonSaveEditedImage_clicked();
+            resetImageEditing();
+            switchToFunctionPage(); // 保存后返回到功能页面
+        } else if (reply == QMessageBox::Cancel) {
+            // 用户取消，不做任何操作，停留在编辑页面
+            return;
+        } else {
+            // 用户选择不保存，清空编辑状态并返回功能页面
+            resetImageEditing();
+            switchToFunctionPage();
+        }
+    } else {
+        // 没有图片被编辑，直接返回功能页面
+        resetImageEditing();
+        switchToFunctionPage();
+    }
+}
+
+// 打开图片进行编辑
+void MainWindow::on_pushButtonOpenImage_clicked()
+{
+    QString fileName = QFileDialog::getOpenFileName(this, "打开图片", "", "图片文件 (*.png *.jpg *.jpeg *.bmp)");
+    
+    if (!fileName.isEmpty()) {
+        // 加载原始图片
+        originalImage.load(fileName);
+        if (originalImage.isNull()) {
+            QMessageBox::warning(this, "错误", "无法加载图片");
+            return;
+        }
+        
+        // 复制原始图片到编辑图片
+        editedImage = originalImage;
+        
+        // 在图像编辑区域显示图片
+        QPixmap pixmap = QPixmap::fromImage(editedImage);
+        editPixmapItem->setPixmap(pixmap);
+        
+        // 调整场景大小以适应图片
+        editScene->setSceneRect(pixmap.rect());
+        
+        // 更新UI状态，启用编辑按钮
+        m_applyFilterBtn->setEnabled(true);
+        m_cropBtn->setEnabled(true);
+        m_rotateBtn->setEnabled(true);
+        m_resizeBtn->setEnabled(true);
+        m_saveImageBtn->setEnabled(true);
+        m_resetImageBtn->setEnabled(true); // 启用重置按钮
+    }
+}
+
+// 保存编辑后的图片
+void MainWindow::on_pushButtonSaveEditedImage_clicked()
+{
+    if (editedImage.isNull()) {
+        QMessageBox::warning(this, "错误", "没有可保存的图片");
+        return;
+    }
+    
+    QString fileName = QFileDialog::getSaveFileName(this, "保存图片", "", "PNG图片 (*.png);;JPG图片 (*.jpg);;JPEG图片 (*.jpeg);;BMP图片 (*.bmp)");
+    
+    if (!fileName.isEmpty()) {
+        // 保存编辑后的图片
+        if (editedImage.save(fileName)) {
+            QMessageBox::information(this, "成功", "图片已成功保存");
+        } else {
+            QMessageBox::warning(this, "错误", "保存图片失败");
+        }
+    }
+}
+
+// 应用滤镜
+void MainWindow::on_pushButtonApplyFilter_clicked()
+{
+    if (editedImage.isNull()) {
+        QMessageBox::warning(this, "错误", "请先打开一张图片");
+        return;
+    }
+    
+    // 创建滤镜选择对话框
+    QDialog dialog(this);
+    dialog.setWindowTitle("选择滤镜");
+    
+    QVBoxLayout *layout = new QVBoxLayout(&dialog);
+    
+    QComboBox *comboBox = new QComboBox(&dialog);
+    comboBox->addItem("灰度");
+    comboBox->addItem("反色");
+    comboBox->addItem("黑白");
+    comboBox->addItem("锐化");
+    comboBox->addItem("模糊");
+    comboBox->addItem("暖色调");
+    comboBox->addItem("冷色调");
+    
+    QPushButton *applyButton = new QPushButton("应用", &dialog);
+    QPushButton *cancelButton = new QPushButton("取消", &dialog);
+    
+    layout->addWidget(new QLabel("选择滤镜类型:"));
+    layout->addWidget(comboBox);
+    
+    QHBoxLayout *buttonLayout = new QHBoxLayout();
+    buttonLayout->addWidget(applyButton);
+    buttonLayout->addWidget(cancelButton);
+    
+    layout->addLayout(buttonLayout);
+    
+    connect(applyButton, &QPushButton::clicked, [&]() {
+        QString filterType = comboBox->currentText();
+        applyFilter(filterType);
+        dialog.accept();
+    });
+    
+    connect(cancelButton, &QPushButton::clicked, &dialog, &QDialog::reject);
+    
+    dialog.exec();
+}
+
+// 裁剪图片
+void MainWindow::on_pushButtonCrop_clicked()
+{
+    if (editedImage.isNull()) {
+        QMessageBox::warning(this, "错误", "请先打开一张图片");
+        return;
+    }
+    
+    // 创建裁剪对话框
+    QDialog dialog(this);
+    dialog.setWindowTitle("裁剪图片");
+    
+    QVBoxLayout *layout = new QVBoxLayout(&dialog);
+    
+    
+    QSpinBox *xSpinBox = new QSpinBox(&dialog);
+    xSpinBox->setRange(0, editedImage.width() - 10);
+    xSpinBox->setValue(0);
+    
+    QSpinBox *ySpinBox = new QSpinBox(&dialog);
+    ySpinBox->setRange(0, editedImage.height() - 10);
+    ySpinBox->setValue(0);
+    
+    QSpinBox *widthSpinBox = new QSpinBox(&dialog);
+    widthSpinBox->setRange(10, editedImage.width());
+    widthSpinBox->setValue(editedImage.width());
+    
+    QSpinBox *heightSpinBox = new QSpinBox(&dialog);
+    heightSpinBox->setRange(10, editedImage.height());
+    heightSpinBox->setValue(editedImage.height());
+    
+    // 连接宽度和X值的约束
+    connect(widthSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), [=](int value) {
+        int maxX = editedImage.width() - value;
+        if (xSpinBox->value() > maxX) {
+            xSpinBox->setValue(maxX);
+        }
+        xSpinBox->setMaximum(maxX);
+    });
+    
+    // 连接高度和Y值的约束
+    connect(heightSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), [=](int value) {
+        int maxY = editedImage.height() - value;
+        if (ySpinBox->value() > maxY) {
+            ySpinBox->setValue(maxY);
+        }
+        ySpinBox->setMaximum(maxY);
+    });
+    
+    QPushButton *applyButton = new QPushButton("裁剪", &dialog);
+    QPushButton *cancelButton = new QPushButton("取消", &dialog);
+    
+    layout->addWidget(new QLabel("X坐标:"));
+    layout->addWidget(xSpinBox);
+    layout->addWidget(new QLabel("Y坐标:"));
+    layout->addWidget(ySpinBox);
+    layout->addWidget(new QLabel("宽度:"));
+    layout->addWidget(widthSpinBox);
+    layout->addWidget(new QLabel("高度:"));
+    layout->addWidget(heightSpinBox);
+    
+    QHBoxLayout *buttonLayout = new QHBoxLayout();
+    buttonLayout->addWidget(applyButton);
+    buttonLayout->addWidget(cancelButton);
+    
+    layout->addLayout(buttonLayout);
+    
+    connect(applyButton, &QPushButton::clicked, [&]() {
+        int x = xSpinBox->value();
+        int y = ySpinBox->value();
+        int width = widthSpinBox->value();
+        int height = heightSpinBox->value();
+        
+        // 裁剪图片
+        editedImage = editedImage.copy(x, y, width, height);
+        
+        // 更新显示
+        QPixmap pixmap = QPixmap::fromImage(editedImage);
+        editPixmapItem->setPixmap(pixmap);
+        editScene->setSceneRect(pixmap.rect());
+        
+        dialog.accept();
+    });
+    
+    connect(cancelButton, &QPushButton::clicked, &dialog, &QDialog::reject);
+    
+    dialog.exec();
+}
+
+// 旋转图片
+void MainWindow::on_pushButtonRotate_clicked()
+{
+    if (editedImage.isNull()) {
+        QMessageBox::warning(this, "错误", "请先打开一张图片");
+        return;
+    }
+    
+    // 创建旋转对话框
+    QDialog dialog(this);
+    dialog.setWindowTitle("旋转图片");
+    
+    QVBoxLayout *layout = new QVBoxLayout(&dialog);
+    
+    QRadioButton *rotate90 = new QRadioButton("旋转90度", &dialog);
+    QRadioButton *rotate180 = new QRadioButton("旋转180度", &dialog);
+    QRadioButton *rotate270 = new QRadioButton("旋转270度", &dialog);
+    QRadioButton *rotateFlipH = new QRadioButton("水平翻转", &dialog);
+    QRadioButton *rotateFlipV = new QRadioButton("垂直翻转", &dialog);
+    
+    rotate90->setChecked(true);
+    
+    QPushButton *applyButton = new QPushButton("应用", &dialog);
+    QPushButton *cancelButton = new QPushButton("取消", &dialog);
+    
+    layout->addWidget(new QLabel("选择旋转类型:"));
+    layout->addWidget(rotate90);
+    layout->addWidget(rotate180);
+    layout->addWidget(rotate270);
+    layout->addWidget(rotateFlipH);
+    layout->addWidget(rotateFlipV);
+    
+    QHBoxLayout *buttonLayout = new QHBoxLayout();
+    buttonLayout->addWidget(applyButton);
+    buttonLayout->addWidget(cancelButton);
+    
+    layout->addLayout(buttonLayout);
+    
+    connect(applyButton, &QPushButton::clicked, [&]() {
+        QImage rotatedImage;
+        
+        if (rotate90->isChecked()) {
+            QTransform transform;
+            transform.rotate(90);
+            rotatedImage = editedImage.transformed(transform);
+        } else if (rotate180->isChecked()) {
+            QTransform transform;
+            transform.rotate(180);
+            rotatedImage = editedImage.transformed(transform);
+        } else if (rotate270->isChecked()) {
+            QTransform transform;
+            transform.rotate(270);
+            rotatedImage = editedImage.transformed(transform);
+        } else if (rotateFlipH->isChecked()) {
+            rotatedImage = editedImage.mirrored(true, false);
+        } else if (rotateFlipV->isChecked()) {
+            rotatedImage = editedImage.mirrored(false, true);
+        }
+        
+        editedImage = rotatedImage;
+        
+        // 更新显示
+        QPixmap pixmap = QPixmap::fromImage(editedImage);
+        editPixmapItem->setPixmap(pixmap);
+        editScene->setSceneRect(pixmap.rect());
+        
+        dialog.accept();
+    });
+    
+    connect(cancelButton, &QPushButton::clicked, &dialog, &QDialog::reject);
+    
+    dialog.exec();
+}
+
+// 调整图片大小
+void MainWindow::on_pushButtonResize_clicked()
+{
+    if (editedImage.isNull()) {
+        QMessageBox::warning(this, "错误", "请先打开一张图片");
+        return;
+    }
+    
+    // 创建调整大小对话框
+    QDialog dialog(this);
+    dialog.setWindowTitle("调整图片大小");
+    
+    QVBoxLayout *layout = new QVBoxLayout(&dialog);
+    
+    QSpinBox *widthSpinBox = new QSpinBox(&dialog);
+    widthSpinBox->setRange(1, 3000);
+    widthSpinBox->setValue(editedImage.width());
+    
+    QSpinBox *heightSpinBox = new QSpinBox(&dialog);
+    heightSpinBox->setRange(1, 3000);
+    heightSpinBox->setValue(editedImage.height());
+    
+    QCheckBox *keepRatioCheckBox = new QCheckBox("保持宽高比", &dialog);
+    keepRatioCheckBox->setChecked(true);
+    
+    // 当勾选保持宽高比时，自动计算高度
+    connect(keepRatioCheckBox, &QCheckBox::toggled, [=](bool checked) {
+        if (checked) {
+            // 重新计算高度
+            double ratio = (double)editedImage.height() / editedImage.width();
+            heightSpinBox->setValue(widthSpinBox->value() * ratio);
+        }
+    });
+    
+    // 当宽度变化时，如果保持宽高比，自动计算高度
+    connect(widthSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), [=](int value) {
+        if (keepRatioCheckBox->isChecked()) {
+            double ratio = (double)editedImage.height() / editedImage.width();
+            heightSpinBox->setValue(value * ratio);
+        }
+    });
+    
+    QPushButton *applyButton = new QPushButton("应用", &dialog);
+    QPushButton *cancelButton = new QPushButton("取消", &dialog);
+    
+    layout->addWidget(new QLabel("宽度:"));
+    layout->addWidget(widthSpinBox);
+    layout->addWidget(new QLabel("高度:"));
+    layout->addWidget(heightSpinBox);
+    layout->addWidget(keepRatioCheckBox);
+    
+    QHBoxLayout *buttonLayout = new QHBoxLayout();
+    buttonLayout->addWidget(applyButton);
+    buttonLayout->addWidget(cancelButton);
+    
+    layout->addLayout(buttonLayout);
+    
+    connect(applyButton, &QPushButton::clicked, [&]() {
+        int width = widthSpinBox->value();
+        int height = heightSpinBox->value();
+        
+        // 调整图片大小
+        editedImage = editedImage.scaled(width, height, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+        
+        // 更新显示
+        QPixmap pixmap = QPixmap::fromImage(editedImage);
+        editPixmapItem->setPixmap(pixmap);
+        editScene->setSceneRect(pixmap.rect());
+        
+        dialog.accept();
+    });
+    
+    connect(cancelButton, &QPushButton::clicked, &dialog, &QDialog::reject);
+    
+    dialog.exec();
+}
+
+// 应用滤镜
+void MainWindow::applyFilter(const QString &filterType)
+{
+    if (editedImage.isNull()) {
+        return;
+    }
+    
+    QImage filteredImage = editedImage;
+    
+    if (filterType == "灰度") {
+        // 灰度滤镜
+        for (int y = 0; y < filteredImage.height(); y++) {
+            for (int x = 0; x < filteredImage.width(); x++) {
+                QRgb pixel = filteredImage.pixel(x, y);
+                int gray = qGray(pixel);
+                filteredImage.setPixel(x, y, qRgb(gray, gray, gray));
+            }
+        }
+    } else if (filterType == "反色") {
+        // 反色滤镜
+        filteredImage.invertPixels();
+    } else if (filterType == "黑白") {
+        // 黑白滤镜（二值化）
+        for (int y = 0; y < filteredImage.height(); y++) {
+            for (int x = 0; x < filteredImage.width(); x++) {
+                QRgb pixel = filteredImage.pixel(x, y);
+                int gray = qGray(pixel);
+                QRgb bw = (gray > 128) ? qRgb(255, 255, 255) : qRgb(0, 0, 0);
+                filteredImage.setPixel(x, y, bw);
+            }
+        }
+    } else if (filterType == "暖色调") {
+        // 暖色调滤镜（增加红色和黄色）
+        for (int y = 0; y < filteredImage.height(); y++) {
+            for (int x = 0; x < filteredImage.width(); x++) {
+                QRgb pixel = filteredImage.pixel(x, y);
+                int r = qRed(pixel);
+                int g = qGreen(pixel);
+                int b = qBlue(pixel);
+                
+                r = qMin(r + 30, 255);
+                g = qMin(g + 15, 255);
+                
+                filteredImage.setPixel(x, y, qRgb(r, g, b));
+            }
+        }
+    } else if (filterType == "冷色调") {
+        // 冷色调滤镜（增加蓝色）
+        for (int y = 0; y < filteredImage.height(); y++) {
+            for (int x = 0; x < filteredImage.width(); x++) {
+                QRgb pixel = filteredImage.pixel(x, y);
+                int r = qRed(pixel);
+                int g = qGreen(pixel);
+                int b = qBlue(pixel);
+                
+                b = qMin(b + 30, 255);
+                r = qMax(r - 10, 0);
+                
+                filteredImage.setPixel(x, y, qRgb(r, g, b));
+            }
+        }
+    } else if (filterType == "锐化" || filterType == "模糊") {
+        // 锐化和模糊滤镜需要使用卷积
+        QImage tempImage = filteredImage.convertToFormat(QImage::Format_RGB32);
+        
+        // 创建卷积核
+        QVector<QVector<float>> kernel;
+        if (filterType == "锐化") {
+            // 锐化卷积核
+            kernel = {
+                {0, -1, 0},
+                {-1, 5, -1},
+                {0, -1, 0}
+            };
+        } else {
+            // 模糊卷积核 (平均模糊)
+            kernel = {
+                {1.0/9, 1.0/9, 1.0/9},
+                {1.0/9, 1.0/9, 1.0/9},
+                {1.0/9, 1.0/9, 1.0/9}
+            };
+        }
+        
+        // 应用卷积
+        int kernelSize = kernel.size();
+        int kernelRadius = kernelSize / 2;
+        
+        for (int y = kernelRadius; y < tempImage.height() - kernelRadius; y++) {
+            for (int x = kernelRadius; x < tempImage.width() - kernelRadius; x++) {
+                float sumR = 0, sumG = 0, sumB = 0;
+                
+                for (int ky = -kernelRadius; ky <= kernelRadius; ky++) {
+                    for (int kx = -kernelRadius; kx <= kernelRadius; kx++) {
+                        QRgb pixel = tempImage.pixel(x + kx, y + ky);
+                        float kernelValue = kernel[ky + kernelRadius][kx + kernelRadius];
+                        
+                        sumR += qRed(pixel) * kernelValue;
+                        sumG += qGreen(pixel) * kernelValue;
+                        sumB += qBlue(pixel) * kernelValue;
+                    }
+                }
+                
+                // 确保值在0-255范围内
+                int r = qBound(0, int(sumR), 255);
+                int g = qBound(0, int(sumG), 255);
+                int b = qBound(0, int(sumB), 255);
+                
+                filteredImage.setPixel(x, y, qRgb(r, g, b));
+            }
+        }
+    }
+    
+    editedImage = filteredImage;
+    
+    // 更新显示
+    QPixmap pixmap = QPixmap::fromImage(editedImage);
+    editPixmapItem->setPixmap(pixmap);
+}
+
+// 重置图片编辑
+void MainWindow::resetImageEditing()
+{
+    originalImage = QImage();
+    editedImage = QImage();
+    
+    // 清空图像显示，但不删除项目
+    editPixmapItem->setPixmap(QPixmap());
+    
+    // 注意：不要在设置空图片后调用clear()，这会删除editPixmapItem
+    // 如果之前调用了clear()，需要确保重新添加项目
+    if (!editScene->items().contains(editPixmapItem)) {
+        editScene->addItem(editPixmapItem);
+    }
+    
+    // 重置场景大小
+    editScene->setSceneRect(QRectF());
+    
+    // 禁用编辑按钮
+    m_applyFilterBtn->setEnabled(false);
+    m_cropBtn->setEnabled(false);
+    m_rotateBtn->setEnabled(false);
+    m_resizeBtn->setEnabled(false);
+    m_saveImageBtn->setEnabled(false);
+    m_resetImageBtn->setEnabled(false); // 禁用重置按钮
+}
+
+// 重置图片到原始状态
+void MainWindow::on_pushButtonResetImage_clicked()
+{
+    if (originalImage.isNull()) {
+        QMessageBox::warning(this, "错误", "没有可重置的图片");
+        return;
+    }
+    
+    // 询问用户是否确定重置
+    QMessageBox::StandardButton reply;
+    reply = QMessageBox::question(this, "重置", "确定要恢复到原始图片吗？",
+                                 QMessageBox::Yes | QMessageBox::No);
+    
+    if (reply == QMessageBox::Yes) {
+        // 将编辑图片重置为原始图片
+        editedImage = originalImage;
+        
+        // 更新显示
+        QPixmap pixmap = QPixmap::fromImage(editedImage);
+        editPixmapItem->setPixmap(pixmap);
+        editScene->setSceneRect(pixmap.rect());
+        
+        QMessageBox::information(this, "成功", "图片已重置");
+    }
 }
 
 

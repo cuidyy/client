@@ -1874,8 +1874,6 @@ release/mainwindow.o: mainwindow.cpp mainwindow.h \
 		D:/Qt/6.5.3/mingw_64/include/QtGui/QPixmap \
 		ui_mainwindow.h \
 		D:/Qt/6.5.3/mingw_64/include/QtWidgets/QApplication \
-		D:/Qt/6.5.3/mingw_64/include/QtWidgets/QFrame \
-		D:/Qt/6.5.3/mingw_64/include/QtWidgets/QGraphicsView \
 		D:/Qt/6.5.3/mingw_64/include/QtWidgets/QHBoxLayout \
 		D:/Qt/6.5.3/mingw_64/include/QtWidgets/QLabel \
 		D:/Qt/6.5.3/mingw_64/include/QtWidgets/QLineEdit \
