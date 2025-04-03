@@ -5,6 +5,7 @@
 #include <QMetaObject>
 #include <QFuture>
 #include <QThread>
+#include <QPainter>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -338,13 +339,25 @@ void MainWindow::switchToManagePage()
     m_tcpsocket->write(msg_base64);
 }
 
+// 添加切换到共享图片平台页面的方法
 void MainWindow::switchToSharePage()
 {
-    // 切换到共享图片平台界面
-    stackedWidget->setCurrentWidget(sharePage);
+    ui->stackedWidget->setCurrentWidget(ui->sharePage);
+    
+    // 设置固定大小的图标
+    ui->listViewShare->setIconSize(QSize(120, 120));
+    
+    // 设置网格视图模式以在一行显示多张图片
+    ui->listViewShare->setViewMode(QListView::IconMode);
+    ui->listViewShare->setGridSize(QSize(150, 160)); // 调整网格大小以适应图标并留出空间
+    ui->listViewShare->setResizeMode(QListView::Adjust); // 调整大小模式
+    ui->listViewShare->setWrapping(true); // 启用换行
+    ui->listViewShare->setSpacing(15); // 增加图片间距
+    ui->listViewShare->setMovement(QListView::Static); // 禁止移动项目
+    ui->listViewShare->setUniformItemSizes(true); // 使用统一的项目大小以优化布局
+    ui->listViewShare->setTextElideMode(Qt::ElideRight); // 文本过长时省略
     
     // 刷新共享图片列表
-    shareModel->removeRows(0, shareModel->rowCount());
     on_pushButtonFlushShare_clicked();
 }
 
@@ -2080,20 +2093,48 @@ void MainWindow::processGetShare()
             // 构建缓存键
             QString cacheKey = userName + "_" + imageName;
             
-            // 创建一个标准项用于在ListView中显示共享图片信息
-            QStandardItem *item = new QStandardItem(imageName);
+            // 创建一个标准项，不显示文本（空字符串）
+            QStandardItem *item = new QStandardItem("");
             
-            // 添加工具提示显示分享者信息
+            // 添加工具提示显示完整图片信息
             item->setToolTip(userName + " 分享的图片: " + imageName);
             
             // 设置默认图标
             QPixmap defaultIcon(":/new/prefix1/icon.png");
             if(defaultIcon.isNull()) {
-                QPixmap pixmap(48, 48);
-                pixmap.fill(QColor(100, 149, 237)); // 蓝色
-                item->setData(pixmap, Qt::DecorationRole);
+                // 创建固定大小的背景
+                QPixmap background(120, 120);
+                background.fill(QColor(230, 230, 250)); // 淡紫色背景
+                
+                // 添加边框
+                QPainter painter(&background);
+                painter.setPen(QPen(QColor(100, 149, 237), 2)); // 蓝色边框，宽度为2
+                painter.drawRect(0, 0, background.width()-1, background.height()-1);
+                painter.end();
+                
+                item->setData(background, Qt::DecorationRole);
             } else {
-                item->setData(defaultIcon.scaled(48, 48), Qt::DecorationRole);
+                // 创建固定大小的背景
+                QPixmap background(120, 120);
+                background.fill(QColor(230, 230, 250)); // 淡紫色背景
+                
+                // 创建绘图器
+                QPainter painter(&background);
+                
+                // 计算如何缩放图标以填充大部分区域但保留一些边距
+                QPixmap scaledIcon = defaultIcon.scaled(100, 100, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+                
+                // 在背景中央绘制图标
+                int x = (background.width() - scaledIcon.width()) / 2;
+                int y = (background.height() - scaledIcon.height()) / 2;
+                painter.drawPixmap(x, y, scaledIcon);
+                
+                // 添加边框
+                painter.setPen(QPen(QColor(100, 149, 237), 2)); // 蓝色边框，宽度为2
+                painter.drawRect(0, 0, background.width()-1, background.height()-1);
+                painter.end();
+                
+                item->setData(background, Qt::DecorationRole);
             }
             
             shareModel->appendRow(item);
@@ -2376,16 +2417,54 @@ void MainWindow::downloadShareThumbnail(const QString &imageName, const QString 
             // 加载图片
             QImage image;
             if (image.loadFromData(imagedata)) {
-                // 生成缩略图并设置到列表项
+                // 创建固定大小的底层背景
+                QPixmap background(120, 120);
+                background.fill(QColor(230, 230, 250)); // 淡紫色背景
+                
+                // 创建绘图器
+                QPainter painter(&background);
+                
+                // 从图像创建pixmap
                 QPixmap pixmap = QPixmap::fromImage(image);
-                QPixmap thumbnail = pixmap.scaled(48, 48, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+                
+                // 计算如何缩放才能完全填充区域（保持比例但确保覆盖整个区域）
+                QSize targetSize = background.size();
+                QSize pixmapSize = pixmap.size();
+                
+                double widthRatio = (double)targetSize.width() / pixmapSize.width();
+                double heightRatio = (double)targetSize.height() / pixmapSize.height();
+                
+                // 选择较大的比例确保填充整个区域
+                double ratio = qMax(widthRatio, heightRatio);
+                
+                int newWidth = pixmapSize.width() * ratio;
+                int newHeight = pixmapSize.height() * ratio;
+                
+                // 缩放图片以填充整个区域
+                QPixmap scaledPixmap = pixmap.scaled(newWidth, newHeight, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+                
+                // 计算要裁剪的区域，确保居中
+                int x = (scaledPixmap.width() - targetSize.width()) / 2;
+                int y = (scaledPixmap.height() - targetSize.height()) / 2;
+                
+                // 裁剪过大的部分
+                QPixmap croppedPixmap = scaledPixmap.copy(x, y, targetSize.width(), targetSize.height());
+                
+                // 在背景上绘制裁剪后的图片
+                painter.drawPixmap(0, 0, croppedPixmap);
+                
+                // 添加边框
+                painter.setPen(QPen(QColor(100, 149, 237), 2)); // 蓝色边框，宽度为2
+                painter.drawRect(0, 0, targetSize.width()-1, targetSize.height()-1);
+                
+                painter.end();
                 
                 // 保存到缓存
-                shareThumbCache[cacheKey] = thumbnail;
+                shareThumbCache[cacheKey] = background;
                 
                 // 使用主线程更新UI
-                QMetaObject::invokeMethod(this, [this, item, thumbnail]() {
-                    item->setData(thumbnail, Qt::DecorationRole);
+                QMetaObject::invokeMethod(this, [this, item, background]() {
+                    item->setData(background, Qt::DecorationRole);
                 }, Qt::QueuedConnection);
                 
                 // 成功处理，退出循环
