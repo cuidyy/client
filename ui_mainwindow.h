@@ -119,6 +119,10 @@ public:
     QPushButton *pushButtonShareFunction;
     QSpacerItem *horizontalSpacer_15;
     QSpacerItem *verticalSpacer_10;
+    QHBoxLayout *horizontalLayout_14;
+    QSpacerItem *horizontalSpacer_16;
+    QPushButton *pushButtonEditFunction;
+    QSpacerItem *horizontalSpacer_17;
 
     void setupUi(QMainWindow *MainWindow)
     {
@@ -282,14 +286,13 @@ public:
 
         verticalLayout_4->addWidget(labelWelcome);
 
-        verticalSpacer_3 = new QSpacerItem(20, 40, QSizePolicy::Minimum, QSizePolicy::Expanding);
-
+        verticalSpacer_3 = new QSpacerItem(20, 40, QSizePolicy::Minimum, QSizePolicy::Fixed);
         verticalLayout_4->addItem(verticalSpacer_3);
 
+        // 第一行按钮：图片上传 和 云端图片预览
         horizontalLayout_5 = new QHBoxLayout();
         horizontalLayout_5->setObjectName("horizontalLayout_5");
         horizontalSpacer_3 = new QSpacerItem(40, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
-
         horizontalLayout_5->addItem(horizontalSpacer_3);
 
         pushButtonUploadFunction = new QPushButton(functionPage);
@@ -299,114 +302,85 @@ public:
         font4.setPointSize(12);
         font4.setBold(true);
         pushButtonUploadFunction->setFont(font4);
-
         horizontalLayout_5->addWidget(pushButtonUploadFunction);
 
-        horizontalSpacer_4 = new QSpacerItem(40, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
-
-        horizontalLayout_5->addItem(horizontalSpacer_4);
-
-
-        verticalLayout_4->addLayout(horizontalLayout_5);
-
-        verticalSpacer_4 = new QSpacerItem(20, 20, QSizePolicy::Minimum, QSizePolicy::Expanding);
-
-        verticalLayout_4->addItem(verticalSpacer_4);
-
-        horizontalLayout_6 = new QHBoxLayout();
-        horizontalLayout_6->setObjectName("horizontalLayout_6");
-        horizontalSpacer_5 = new QSpacerItem(40, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
-
-        horizontalLayout_6->addItem(horizontalSpacer_5);
+        QSpacerItem *horizontalSpacer_mid1 = new QSpacerItem(20, 20, QSizePolicy::Fixed, QSizePolicy::Minimum);
+        horizontalLayout_5->addItem(horizontalSpacer_mid1);
 
         pushButtonCloudFunction = new QPushButton(functionPage);
         pushButtonCloudFunction->setObjectName("pushButtonCloudFunction");
         pushButtonCloudFunction->setMinimumSize(QSize(180, 60));
         pushButtonCloudFunction->setFont(font4);
+        horizontalLayout_5->addWidget(pushButtonCloudFunction);
 
-        horizontalLayout_6->addWidget(pushButtonCloudFunction);
+        horizontalSpacer_4 = new QSpacerItem(40, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
+        horizontalLayout_5->addItem(horizontalSpacer_4);
+        verticalLayout_4->addLayout(horizontalLayout_5);
 
-        horizontalSpacer_6 = new QSpacerItem(40, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
+        verticalSpacer_4 = new QSpacerItem(20, 15, QSizePolicy::Minimum, QSizePolicy::Fixed);
+        verticalLayout_4->addItem(verticalSpacer_4);
 
-        horizontalLayout_6->addItem(horizontalSpacer_6);
-
-
-        verticalLayout_4->addLayout(horizontalLayout_6);
-
-        verticalSpacer_41 = new QSpacerItem(20, 20, QSizePolicy::Minimum, QSizePolicy::Expanding);
-
-        verticalLayout_4->addItem(verticalSpacer_41);
-
+        // 第二行按钮：云端图片管理 和 共享图片平台
         horizontalLayout_11 = new QHBoxLayout();
         horizontalLayout_11->setObjectName("horizontalLayout_11");
         horizontalSpacer_12 = new QSpacerItem(40, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
-
         horizontalLayout_11->addItem(horizontalSpacer_12);
 
         pushButtonManageFunction = new QPushButton(functionPage);
         pushButtonManageFunction->setObjectName("pushButtonManageFunction");
         pushButtonManageFunction->setMinimumSize(QSize(180, 60));
         pushButtonManageFunction->setFont(font4);
-
         horizontalLayout_11->addWidget(pushButtonManageFunction);
 
-        horizontalSpacer_13 = new QSpacerItem(40, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
-
-        horizontalLayout_11->addItem(horizontalSpacer_13);
-
-
-        verticalLayout_4->addLayout(horizontalLayout_11);
-
-        verticalSpacer_5 = new QSpacerItem(20, 40, QSizePolicy::Minimum, QSizePolicy::Expanding);
-
-        verticalLayout_4->addItem(verticalSpacer_5);
-
-        horizontalLayout_13 = new QHBoxLayout();
-        horizontalLayout_13->setObjectName("horizontalLayout_13");
-        horizontalSpacer_14 = new QSpacerItem(40, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
-
-        horizontalLayout_13->addItem(horizontalSpacer_14);
+        QSpacerItem *horizontalSpacer_mid2 = new QSpacerItem(20, 20, QSizePolicy::Fixed, QSizePolicy::Minimum);
+        horizontalLayout_11->addItem(horizontalSpacer_mid2);
 
         pushButtonShareFunction = new QPushButton(functionPage);
         pushButtonShareFunction->setObjectName("pushButtonShareFunction");
         pushButtonShareFunction->setMinimumSize(QSize(180, 60));
         pushButtonShareFunction->setFont(font4);
+        horizontalLayout_11->addWidget(pushButtonShareFunction);
 
-        horizontalLayout_13->addWidget(pushButtonShareFunction);
+        horizontalSpacer_13 = new QSpacerItem(40, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
+        horizontalLayout_11->addItem(horizontalSpacer_13);
+        verticalLayout_4->addLayout(horizontalLayout_11);
 
-        horizontalSpacer_15 = new QSpacerItem(40, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
+        verticalSpacer_41 = new QSpacerItem(20, 15, QSizePolicy::Minimum, QSizePolicy::Fixed);
+        verticalLayout_4->addItem(verticalSpacer_41);
 
-        horizontalLayout_13->addItem(horizontalSpacer_15);
-
-
-        verticalLayout_4->addLayout(horizontalLayout_13);
-        
-        verticalSpacer_10 = new QSpacerItem(20, 20, QSizePolicy::Minimum, QSizePolicy::Expanding);
-
-        verticalLayout_4->addItem(verticalSpacer_10);
-
+        // 第三行按钮：在线图片编辑 和 退出登录
         horizontalLayout_7 = new QHBoxLayout();
         horizontalLayout_7->setObjectName("horizontalLayout_7");
         horizontalSpacer_7 = new QSpacerItem(40, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
-
         horizontalLayout_7->addItem(horizontalSpacer_7);
 
+        pushButtonEditFunction = new QPushButton(functionPage);
+        pushButtonEditFunction->setObjectName("pushButtonEditFunction");
+        pushButtonEditFunction->setMinimumSize(QSize(180, 60));
+        pushButtonEditFunction->setFont(font4);
+        pushButtonEditFunction->setStyleSheet(QString::fromUtf8("background-color: rgb(90, 90, 90);\ncolor: rgb(255, 255, 255);"));
+        horizontalLayout_7->addWidget(pushButtonEditFunction);
+        
+        // 在布局中增加一个空白项，以保持一致性
+        QSpacerItem *horizontalSpacer_mid3 = new QSpacerItem(20, 20, QSizePolicy::Fixed, QSizePolicy::Minimum);
+        horizontalLayout_7->addItem(horizontalSpacer_mid3);
+        
+        // 将退出登录按钮与在线图片编辑按钮并排
         pushButtonLogout = new QPushButton(functionPage);
         pushButtonLogout->setObjectName("pushButtonLogout");
-        pushButtonLogout->setMinimumSize(QSize(120, 40));
-        pushButtonLogout->setFont(font1);
-
+        pushButtonLogout->setMinimumSize(QSize(180, 60));
+        pushButtonLogout->setFont(font4);
+        pushButtonLogout->setStyleSheet(QString::fromUtf8("background-color: rgb(90, 90, 90);\ncolor: rgb(255, 255, 255);"));
         horizontalLayout_7->addWidget(pushButtonLogout);
 
         horizontalSpacer_8 = new QSpacerItem(40, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
-
         horizontalLayout_7->addItem(horizontalSpacer_8);
-
-
         verticalLayout_4->addLayout(horizontalLayout_7);
 
-        verticalSpacer_9 = new QSpacerItem(20, 20, QSizePolicy::Minimum, QSizePolicy::Fixed);
+        verticalSpacer_10 = new QSpacerItem(20, 20, QSizePolicy::Minimum, QSizePolicy::Expanding);
+        verticalLayout_4->addItem(verticalSpacer_10);
 
+        verticalSpacer_9 = new QSpacerItem(20, 20, QSizePolicy::Minimum, QSizePolicy::Fixed);
         verticalLayout_4->addItem(verticalSpacer_9);
 
         stackedWidget->addWidget(functionPage);
@@ -645,6 +619,7 @@ public:
         pushButtonCloudFunction->setText(QCoreApplication::translate("MainWindow", "\344\272\221\347\253\257\345\233\276\347\211\207\351\242\204\350\247\210", nullptr));
         pushButtonManageFunction->setText(QCoreApplication::translate("MainWindow", "\344\272\221\347\253\257\345\233\276\347\211\207\347\256\241\347\220\206", nullptr));
         pushButtonShareFunction->setText(QCoreApplication::translate("MainWindow", "\345\205\261\344\272\253\345\233\276\347\211\207\345\271\263\345\217\260", nullptr));
+        pushButtonEditFunction->setText(QCoreApplication::translate("MainWindow", "\345\234\250\347\272\277\345\233\276\347\211\207\347\274\226\350\276\221", nullptr));
         pushButtonLogout->setText(QCoreApplication::translate("MainWindow", "\351\200\200\345\207\272\347\231\273\345\275\225", nullptr));
         label_3->setText(QCoreApplication::translate("MainWindow", "\345\276\205\344\270\212\344\274\240\345\233\276\347\211\207\345\210\227\350\241\250", nullptr));
         pushButtonSelectFile->setText(QCoreApplication::translate("MainWindow", "\351\200\211\346\213\251\346\226\207\344\273\266", nullptr));

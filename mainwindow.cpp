@@ -133,6 +133,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->pushButtonCloudFunction->setStyleSheet(buttonStyle);
     ui->pushButtonManageFunction->setStyleSheet(buttonStyle);
     ui->pushButtonShareFunction->setStyleSheet(buttonStyle); // 添加共享图片平台按钮样式
+    ui->pushButtonEditFunction->setStyleSheet(buttonStyle); // 添加在线图片编辑按钮样式
     ui->pushButtonLogout->setStyleSheet(buttonStyle);
     
     // 应用上传功能页面按钮样式
