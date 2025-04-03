@@ -1874,6 +1874,8 @@ release/mainwindow.o: ../../mainwindow.cpp ../../mainwindow.h \
 		D:/Qt/6.5.3/mingw_64/include/QtGui/QPixmap \
 		../../ui_mainwindow.h \
 		D:/Qt/6.5.3/mingw_64/include/QtWidgets/QApplication \
+		D:/Qt/6.5.3/mingw_64/include/QtWidgets/QFrame \
+		D:/Qt/6.5.3/mingw_64/include/QtWidgets/QGraphicsView \
 		D:/Qt/6.5.3/mingw_64/include/QtWidgets/QHBoxLayout \
 		D:/Qt/6.5.3/mingw_64/include/QtWidgets/QLabel \
 		D:/Qt/6.5.3/mingw_64/include/QtWidgets/QLineEdit \
@@ -1906,7 +1908,8 @@ release/mainwindow.o: ../../mainwindow.cpp ../../mainwindow.h \
 		D:/Qt/6.5.3/mingw_64/include/QtConcurrent/qtconcurrentversion.h \
 		D:/Qt/6.5.3/mingw_64/include/QtCore/QMetaObject \
 		D:/Qt/6.5.3/mingw_64/include/QtCore/QFuture \
-		D:/Qt/6.5.3/mingw_64/include/QtCore/QThread
+		D:/Qt/6.5.3/mingw_64/include/QtCore/QThread \
+		D:/Qt/6.5.3/mingw_64/include/QtGui/QPainter
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o release\mainwindow.o ..\..\mainwindow.cpp
 
 release/qaesencryption.o: ../../qaesencryption.cpp ../../qaesencryption.h \

@@ -641,7 +641,7 @@ public:
         pushButtonLogin->setText(QCoreApplication::translate("MainWindow", "\347\231\273\345\275\225", nullptr));
         pushButtonRegister->setText(QCoreApplication::translate("MainWindow", "\346\263\250\345\206\214", nullptr));
         labelWelcome->setText(QCoreApplication::translate("MainWindow", "\346\254\242\350\277\216\344\275\277\347\224\250\357\274\214\350\257\267\351\200\211\346\213\251\345\212\237\350\203\275\357\274\232", nullptr));
-        pushButtonUploadFunction->setText(QCoreApplication::translate("MainWindow", "\345\233\276\347\211\207\344\270\212\344\274\240\345\212\237\350\203\275", nullptr));
+        pushButtonUploadFunction->setText(QCoreApplication::translate("MainWindow", "\345\233\276\347\211\207\344\270\212\344\274\240", nullptr));
         pushButtonCloudFunction->setText(QCoreApplication::translate("MainWindow", "\344\272\221\347\253\257\345\233\276\347\211\207\351\242\204\350\247\210", nullptr));
         pushButtonManageFunction->setText(QCoreApplication::translate("MainWindow", "\344\272\221\347\253\257\345\233\276\347\211\207\347\256\241\347\220\206", nullptr));
         pushButtonShareFunction->setText(QCoreApplication::translate("MainWindow", "\345\205\261\344\272\253\345\233\276\347\211\207\345\271\263\345\217\260", nullptr));
@@ -651,7 +651,7 @@ public:
         pushButtonUpload->setText(QCoreApplication::translate("MainWindow", "\344\270\212\344\274\240", nullptr));
         pushButtonBackFromUpload->setText(QCoreApplication::translate("MainWindow", "\350\277\224\345\233\236", nullptr));
         label_4->setText(QCoreApplication::translate("MainWindow", "\344\272\221\347\253\257\345\233\276\347\211\207\345\210\227\350\241\250", nullptr));
-        label_5->setText(QCoreApplication::translate("MainWindow", "\346\217\220\347\244\272\357\274\232\345\217\214\345\207\273\344\270\213\350\275\275\345\233\276\347\211\207\357\274\214\345\217\263\351\224\256\345\210\240\351\231\244\345\233\276\347\211\207", nullptr));
+        label_5->setText(QCoreApplication::translate("MainWindow", "\345\217\214\345\207\273\345\233\276\347\211\207\351\242\204\350\247\210", nullptr));
         pushButtonFlush->setText(QCoreApplication::translate("MainWindow", "\345\210\267\346\226\260", nullptr));
         pushButtonBackFromCloud->setText(QCoreApplication::translate("MainWindow", "\350\277\224\345\233\236", nullptr));
         label_6->setText(QCoreApplication::translate("MainWindow", "\344\272\221\347\253\257\345\233\276\347\211\207\347\256\241\347\220\206", nullptr));
